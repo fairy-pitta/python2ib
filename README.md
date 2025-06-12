@@ -1,0 +1,351 @@
+# Python to IB Pseudocode Converter
+
+A TypeScript library and CLI tool that converts Python code to IB (International Baccalaureate) Pseudocode format.
+
+## Features
+
+- ✅ **Complete Python to IB Pseudocode conversion**
+- ✅ **Support for core Python constructs**: variables, functions, control structures
+- ✅ **Configurable output formatting**: indentation, style options
+- ✅ **CLI tool** for command-line usage
+- ✅ **TypeScript API** for programmatic use
+- ✅ **Syntax validation** and error reporting
+- ✅ **Comprehensive test suite**
+
+## Supported Python Constructs
+
+### ✅ Fully Supported
+- Variable assignments (`x = 5` → `x ← 5`)
+- Arithmetic operations (`+`, `-`, `*`, `/`, `//`, `%`, `**`)
+- Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
+- Logical operations (`and`, `or`, `not`)
+- Output statements (`print()` → `OUTPUT`)
+- Input statements (`input()` → `INPUT`)
+- If/else statements (`if`/`else` → `IF`/`ELSE`/`ENDIF`)
+- While loops (`while` → `WHILE`/`ENDWHILE`)
+- For loops with range (`for i in range()` → `FOR`/`NEXT`)
+- Function definitions (`def` → `FUNCTION`/`PROCEDURE`)
+- Return statements (`return` → `RETURN`)
+- Comments (`#` → `//`)
+- Built-in functions (`len()`, `str()`, `int()`, `float()`)
+
+### ❌ Not Supported (IB Pseudocode limitations)
+- Classes and objects
+- List comprehensions
+- Lambda functions
+- Exception handling (try/except)
+- Import statements
+- Advanced data structures (dictionaries, sets)
+- Decorators
+- Context managers (with statements)
+
+## Installation
+
+```bash
+npm install python2ib
+```
+
+## Quick Start
+
+### CLI Usage
+
+```bash
+# Convert a Python file
+python2ib script.py
+
+# Convert with output file
+python2ib -i script.py -o pseudocode.txt
+
+# Validate Python syntax
+python2ib --validate script.py
+
+# Show supported constructs
+python2ib --info
+
+# Custom indentation
+python2ib --indent tabs --indent-size 2 script.py
+```
+
+### Programmatic Usage
+
+```typescript
+import { convertPythonToIBSync, PythonToIBConverter } from 'python2ib';
+
+// Quick conversion
+const pythonCode = `
+x = 10
+y = 20
+result = x + y
+print("Sum:", result)
+`;
+
+const pseudocode = convertPythonToIBSync(pythonCode);
+console.log(pseudocode);
+// Output:
+// x ← 10
+// y ← 20
+// result ← x + y
+// OUTPUT "Sum:" + " " + result
+
+// Advanced usage with configuration
+const converter = new PythonToIBConverter({
+  indentStyle: 'spaces',
+  indentSize: 4,
+  strictMode: false
+});
+
+const result = converter.convertSync(pythonCode);
+```
+
+## Examples
+
+### Basic Operations
+
+**Python:**
+```python
+# Variable assignment
+name = "Alice"
+age = 25
+
+# Arithmetic
+result = age * 2
+
+# Output
+print("Name:", name)
+print("Double age:", result)
+```
+
+**IB Pseudocode:**
+```
+// Variable assignment
+name ← "Alice"
+age ← 25
+
+// Arithmetic
+result ← age * 2
+
+// Output
+OUTPUT "Name:" + " " + name
+OUTPUT "Double age:" + " " + result
+```
+
+### Control Structures
+
+**Python:**
+```python
+age = int(input("Enter age: "))
+
+if age >= 18:
+    print("Adult")
+else:
+    print("Minor")
+
+for i in range(1, 6):
+    print("Count:", i)
+```
+
+**IB Pseudocode:**
+```
+OUTPUT "Enter age: "
+age ← INTEGER(INPUT)
+
+IF age ≥ 18 THEN
+    OUTPUT "Adult"
+ELSE
+    OUTPUT "Minor"
+ENDIF
+
+FOR i ← 1 TO 5 STEP 1
+    OUTPUT "Count:" + " " + i
+NEXT i
+```
+
+### Functions
+
+**Python:**
+```python
+def greet(name):
+    print("Hello,", name)
+
+def calculate_area(length, width):
+    return length * width
+
+greet("Bob")
+area = calculate_area(5, 3)
+print("Area:", area)
+```
+
+**IB Pseudocode:**
+```
+PROCEDURE greet(name)
+    OUTPUT "Hello," + " " + name
+ENDPROCEDURE
+
+FUNCTION calculate_area(length, width) RETURNS UNKNOWN
+    RETURN length * width
+ENDFUNCTION
+
+greet("Bob")
+area ← calculate_area(5, 3)
+OUTPUT "Area:" + " " + area
+```
+
+## API Reference
+
+### Main Classes
+
+#### `PythonToIBConverter`
+
+Main converter class with full configuration options.
+
+```typescript
+const converter = new PythonToIBConverter({
+  indentStyle: 'spaces' | 'tabs',
+  indentSize: number,
+  strictMode: boolean,
+  preserveComments: boolean,
+  variableNaming: 'preserve' | 'camelCase' | 'snake_case',
+  functionNaming: 'preserve' | 'camelCase' | 'snake_case'
+});
+
+// Convert code
+const result = converter.convertSync(pythonCode);
+
+// Validate syntax
+const validation = converter.validateSyntax(pythonCode);
+
+// Get supported constructs
+const supported = converter.getSupportedConstructs();
+```
+
+### Convenience Functions
+
+```typescript
+// Quick conversion
+convertPythonToIBSync(code: string, options?: Partial<ConvertOptions>): string
+
+// Async conversion
+convertPythonToIB(code: string, options?: Partial<ConvertOptions>): Promise<string>
+
+// Syntax validation
+validatePythonSyntax(code: string): { isValid: boolean; errors: string[] }
+
+// Get construct information
+getConstructInfo(): { supported: string[]; unsupported: string[] }
+```
+
+## Configuration Options
+
+```typescript
+interface ConvertOptions {
+  outputFormat: 'ib-pseudocode';           // Output format
+  indentStyle: 'spaces' | 'tabs';          // Indentation style
+  indentSize: number;                      // Indentation size (1-8)
+  normalizeIndentation: boolean;           // Normalize indentation
+  preserveComments: boolean;               // Preserve comments
+  strictMode: boolean;                     // Strict conversion mode
+  variableNaming: 'preserve' | 'camelCase' | 'snake_case';
+  functionNaming: 'preserve' | 'camelCase' | 'snake_case';
+}
+```
+
+## CLI Options
+
+```bash
+Options:
+  -h, --help              Show help message
+  -v, --version           Show version information
+  -i, --input <file>      Input Python file
+  -o, --output <file>     Output file (default: stdout)
+  -c, --config <file>     Configuration file (JSON)
+  --validate              Validate Python syntax only
+  --info                  Show supported/unsupported constructs
+  --indent <type>         Indentation type: 'spaces' or 'tabs'
+  --indent-size <size>    Indentation size: 1-8
+  --strict                Enable strict mode
+  -q, --quiet             Suppress non-error output
+  --verbose               Enable verbose output
+```
+
+## Development
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/python2ib.git
+cd python2ib
+
+# Install dependencies
+npm install
+
+# Build project
+npm run build
+
+# Run tests
+npm test
+
+# Run examples
+npm run example
+```
+
+### Project Structure
+
+```
+src/
+├── types/           # Type definitions
+│   ├── ir.ts       # Intermediate Representation
+│   └── config.ts   # Configuration types
+├── parser/         # Python parsing
+│   ├── index.ts    # Main parser
+│   ├── ast-parser.ts
+│   └── visitor/    # AST visitor pattern
+├── emitter/        # IB Pseudocode generation
+│   └── index.ts
+├── utils/          # Utility functions
+│   ├── indent.ts
+│   ├── operators.ts
+│   └── keywords.ts
+├── __tests__/      # Test files
+├── index.ts        # Main API
+└── cli.ts          # CLI tool
+```
+
+### Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Changelog
+
+### v1.0.0
+- Initial release
+- Support for basic Python constructs
+- CLI tool
+- TypeScript API
+- Comprehensive test suite
+
+## Support
+
+For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/yourusername/python2ib).
