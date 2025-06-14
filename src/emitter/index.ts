@@ -121,9 +121,27 @@ export class IBPseudocodeEmitter {
         this.emitBlock(node);
         break;
         
+      case 'sequence':
+        this.emitSequence(node);
+        break;
+        
       default:
         this.emitUnsupported(node);
         break;
+    }
+  }
+  
+  /** Emit block */
+  private emitBlock(node: IR): void {
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+  
+  /** Emit sequence */
+  private emitSequence(node: IR): void {
+    for (const child of node.children) {
+      this.emitNode(child);
     }
   }
   
@@ -308,13 +326,7 @@ export class IBPseudocodeEmitter {
     this.output.push(line);
   }
   
-  /** Emit block */
-  private emitBlock(node: IR): void {
-    // Blocks don't emit their own text, just their children
-    for (const child of node.children) {
-      this.emitNode(child);
-    }
-  }
+
   
   /** Emit unsupported node */
   private emitUnsupported(node: IR): void {

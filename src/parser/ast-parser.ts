@@ -89,6 +89,7 @@ export class PythonLexer {
   private line: number = 1;
   private column: number = 1;
   private tokens: Token[] = [];
+  private indentStack: number[] = [0]; // Track indentation levels
   
   constructor(code: string) {
     this.code = code;
@@ -172,6 +173,12 @@ export class PythonLexer {
       throw new Error(`Unexpected character '${char}' at line ${this.line}, column ${this.column}`);
     }
     
+    // Add DEDENT tokens for any remaining indentation at end of file
+    while (this.indentStack.length > 1) {
+      this.indentStack.pop();
+      this.addToken(TokenType.DEDENT, '');
+    }
+    
     this.addToken(TokenType.EOF, '');
     return this.tokens;
   }
@@ -212,12 +219,33 @@ export class PythonLexer {
       this.advance();
     }
     
-    // Only add INDENT token if there's actual indentation and content on the line
-    if (indentLevel > 0 && this.position < this.code.length && 
-        this.code[this.position] !== '\n' && this.code[this.position] !== '#') {
+    // Skip empty lines and comment-only lines
+    if (this.position >= this.code.length || 
+        this.code[this.position] === '\n' || 
+        this.code[this.position] === '#') {
+      return;
+    }
+    
+    const currentIndent = this.indentStack[this.indentStack.length - 1];
+    
+    if (indentLevel > currentIndent) {
+      // Increased indentation - add INDENT token
+      this.indentStack.push(indentLevel);
       const indentText = this.code.substring(start, this.position);
       this.addToken(TokenType.INDENT, indentText);
+    } else if (indentLevel < currentIndent) {
+      // Decreased indentation - add DEDENT tokens
+      while (this.indentStack.length > 1 && this.indentStack[this.indentStack.length - 1] > indentLevel) {
+        this.indentStack.pop();
+        this.addToken(TokenType.DEDENT, '');
+      }
+      
+      // Check if indentation level matches any previous level
+      if (this.indentStack[this.indentStack.length - 1] !== indentLevel) {
+        throw new Error(`Indentation error at line ${this.line}: unmatched indentation level`);
+      }
     }
+    // If indentLevel === currentIndent, no change needed
   }
   
   private readComment(): void {
@@ -413,6 +441,10 @@ export class ASTParser {
         return this.parseReturn();
       }
       
+      if (this.check(TokenType.PRINT)) {
+        return this.parsePrint();
+      }
+      
       // Try assignment or expression
       return this.parseAssignmentOrExpression();
     } catch (error) {
@@ -590,11 +622,13 @@ export class ASTParser {
     this.consume(TokenType.RPAREN, "Expected ')' after parameters");
     this.consume(TokenType.COLON, "Expected ':' after function signature");
     
+    const body = this.parseBlock();
+    
     return {
       type: 'FunctionDef',
       name,
       args: { args },
-      body: [], // Will be filled by visitor
+      body,
       lineno: this.previous().line
     };
   }
@@ -610,6 +644,46 @@ export class ASTParser {
     return {
       type: 'Return',
       value,
+      lineno: token.line
+    };
+  }
+  
+  private parsePrint(): PythonASTNode {
+    const token = this.advance(); // consume PRINT
+    this.consume(TokenType.LPAREN, "Expected '(' after print");
+    
+    const args: PythonASTNode[] = [];
+    if (!this.check(TokenType.RPAREN)) {
+      do {
+        // Handle f-string case: f"string"
+        if (this.check(TokenType.IDENTIFIER) && this.peek()?.value === 'f' && 
+            this.tokens[this.current + 1]?.type === TokenType.STRING) {
+          this.advance(); // consume 'f'
+          const stringToken = this.advance(); // consume string
+          args.push({
+            type: 'JoinedStr',
+            values: [{
+              type: 'Constant',
+              value: stringToken.value,
+              lineno: stringToken.line
+            }],
+            lineno: stringToken.line
+          });
+        } else {
+          args.push(this.parseExpression());
+        }
+      } while (this.match(TokenType.COMMA));
+    }
+    
+    this.consume(TokenType.RPAREN, "Expected ')' after print arguments");
+    
+    return {
+      type: 'Call',
+      func: {
+        type: 'Name',
+        id: 'print'
+      },
+      args,
       lineno: token.line
     };
   }
@@ -640,7 +714,24 @@ export class ASTParser {
   }
   
   private parseExpression(): PythonASTNode {
-    return this.parseOr();
+    const expr = this.parseOr();
+    
+    // Check for comma-separated expressions (tuple)
+    if (this.check(TokenType.COMMA)) {
+      const elements = [expr];
+      
+      while (this.match(TokenType.COMMA)) {
+        elements.push(this.parseOr());
+      }
+      
+      return {
+        type: 'Tuple',
+        elts: elements,
+        lineno: expr.lineno
+      };
+    }
+    
+    return expr;
   }
   
   private parseOr(): PythonASTNode {
@@ -819,7 +910,7 @@ export class ASTParser {
     
     if (!this.check(TokenType.RPAREN)) {
       do {
-        args.push(this.parseExpression());
+        args.push(this.parseOr());
       } while (this.match(TokenType.COMMA));
     }
     
@@ -887,7 +978,7 @@ export class ASTParser {
       };
     }
     
-    if (this.match(TokenType.IDENTIFIER, TokenType.PRINT)) {
+    if (this.match(TokenType.IDENTIFIER, TokenType.PRINT, TokenType.INPUT)) {
       return {
         type: 'Name',
         id: this.previous().value,
@@ -910,33 +1001,25 @@ export class ASTParser {
     
     this.skipNewlines();
     
-    // Look for indented statements
-    while (!this.isAtEnd()) {
-      // Check if we have an INDENT token (indicating an indented block)
-      if (this.check(TokenType.INDENT)) {
-        this.advance(); // consume INDENT
-        const stmt = this.parseStatement();
-        if (stmt) {
-          statements.push(stmt);
-        }
+    if (this.match(TokenType.INDENT)) {
+      while (!this.check(TokenType.DEDENT) && !this.isAtEnd()) {
         this.skipNewlines();
-      } else if (this.check(TokenType.ELIF) || this.check(TokenType.ELSE) || 
-                 this.check(TokenType.DEF) || this.check(TokenType.IF) || 
-                 this.check(TokenType.WHILE) || this.check(TokenType.FOR) ||
-                 this.check(TokenType.EOF)) {
-        // End of current block
-        break;
-      } else {
-        // No indentation, might be end of block or same-level statement
-        const stmt = this.parseStatement();
-        if (stmt) {
-          statements.push(stmt);
-        }
-        this.skipNewlines();
-        // If we parsed a statement without indentation, it might be the end of the block
-        if (!this.check(TokenType.INDENT)) {
+        
+        if (this.check(TokenType.DEDENT) || this.isAtEnd()) {
           break;
         }
+        
+        const stmt = this.parseStatement();
+        
+        if (stmt) {
+          statements.push(stmt);
+        }
+        
+        this.skipNewlines();
+      }
+      
+      if (this.match(TokenType.DEDENT)) {
+        // Successfully consumed DEDENT
       }
     }
     

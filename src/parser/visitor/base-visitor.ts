@@ -95,6 +95,13 @@ export abstract class BaseVisitor implements Visitor<IR> {
       case 'Subscript':
         return this.extractSubscript(node, depth + 1);
         
+      case 'JoinedStr':
+        return this.extractJoinedString(node, depth + 1);
+        
+      case 'Tuple':
+        // For tuple expressions, join elements with commas
+        return node.elts.map((elt: PythonASTNode) => this.extractExpression(elt, depth + 1)).join(', ');
+        
       default:
         return `/* ${node.type} */`;
     }
@@ -178,6 +185,54 @@ export abstract class BaseVisitor implements Visitor<IR> {
     }
     
     return `${value}[${slice}]`;
+  }
+  
+  /** Extract joined string (f-string) expression */
+  protected extractJoinedString(node: PythonASTNode, _depth: number = 0): string {
+    if (!node.values || !Array.isArray(node.values)) {
+      return '""';
+    }
+    
+    // For f-strings like f"Hello {name}", we need to parse the string and extract variables
+    const firstValue = node.values[0];
+    if (firstValue && firstValue.type === 'Constant') {
+      const stringValue = firstValue.value;
+      
+      // Simple f-string parsing: extract variables from {variable} patterns
+      const parts: string[] = [];
+      const regex = /\{([^}]+)\}/g;
+      let lastIndex = 0;
+      let match;
+      
+      while ((match = regex.exec(stringValue)) !== null) {
+        // Add text before the variable
+        if (match.index > lastIndex) {
+          const textPart = stringValue.substring(lastIndex, match.index);
+          if (textPart) {
+            parts.push(`"${textPart}"`);
+          }
+        }
+        
+        // Add the variable (convert to uppercase)
+        const variableName = match[1].trim();
+        parts.push(this.mapVariableName(variableName));
+        
+        lastIndex = regex.lastIndex;
+      }
+      
+      // Add remaining text after the last variable
+      if (lastIndex < stringValue.length) {
+        const textPart = stringValue.substring(lastIndex);
+        if (textPart) {
+          parts.push(`"${textPart}"`);
+        }
+      }
+      
+      // Join parts with " + "
+      return parts.length > 0 ? parts.join(' + ') : '""';
+    }
+    
+    return '""';
   }
   
   /** Convert Python binary operators to IB Pseudocode */
@@ -268,7 +323,18 @@ export abstract class BaseVisitor implements Visitor<IR> {
   
   /** Apply function name mapping if configured */
   protected mapFunctionName(name: string): string {
-    return this.config.functionMapping[name] || name;
+    // Check for explicit mapping first
+    if (this.config.functionMapping[name]) {
+      return this.config.functionMapping[name];
+    }
+    
+    // Convert snake_case to camelCase
+    return this.snakeToCamelCase(name);
+  }
+  
+  /** Convert snake_case to camelCase */
+  private snakeToCamelCase(str: string): string {
+    return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   }
   
   /** Create error IR node */
@@ -294,11 +360,11 @@ export abstract class BaseVisitor implements Visitor<IR> {
 
 /** Utility functions for visitor implementations */
 export const VisitorUtils = {
-  /** Check if node is a simple assignment */
+  /** Check if assignment is simple (single target) */
   isSimpleAssignment(node: PythonASTNode): boolean {
     return node.type === 'Assign' && 
            node.targets.length === 1 && 
-           (node.targets[0].type === 'Name' || node.targets[0].type === 'Subscript');
+           (node.targets[0].type === 'Name' || node.targets[0].type === 'Subscript' || node.targets[0].type === 'Tuple');
   },
   
   /** Check if node is a function call */
@@ -318,6 +384,25 @@ export const VisitorUtils = {
     return node.type === 'Call' && 
            node.func.type === 'Name' && 
            node.func.id === 'input';
+  },
+
+  /** Check if node is an input call wrapped in type conversion (e.g., int(input())) */
+  isWrappedInputCall(node: PythonASTNode): boolean {
+    if (node.type === 'Call' && 
+        node.func.type === 'Name' && 
+        ['int', 'float', 'str'].includes(node.func.id) &&
+        node.args.length === 1) {
+      return this.isInputCall(node.args[0]);
+    }
+    return false;
+  },
+
+  /** Extract input call from wrapped input (e.g., extract input() from int(input())) */
+  extractInputFromWrapped(node: PythonASTNode): PythonASTNode | null {
+    if (this.isWrappedInputCall(node)) {
+      return node.args[0];
+    }
+    return null;
   },
   
   /** Check if node is a range call */

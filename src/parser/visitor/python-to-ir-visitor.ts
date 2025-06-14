@@ -36,6 +36,12 @@ export class PythonToIRVisitor extends BaseVisitor {
     }
     
     const targetNode = node.targets[0];
+    
+    // Handle tuple assignment (multiple assignment)
+    if (targetNode.type === 'Tuple') {
+      return this.visitTupleAssignment(node);
+    }
+    
     let mappedTarget: string;
     
     if (targetNode.type === 'Name') {
@@ -46,6 +52,19 @@ export class PythonToIRVisitor extends BaseVisitor {
       mappedTarget = this.extractExpression(targetNode);
     } else {
       return this.createError('Unsupported assignment target', node.lineno);
+    }
+    
+    // Handle input() function calls in assignments
+    if (VisitorUtils.isInputCall(node.value)) {
+      return this.visitInputCallAssignment(node.value, mappedTarget);
+    }
+
+    // Handle wrapped input() calls like int(input())
+    if (VisitorUtils.isWrappedInputCall(node.value)) {
+      const inputCall = VisitorUtils.extractInputFromWrapped(node.value);
+      if (inputCall) {
+        return this.visitInputCallAssignment(inputCall, mappedTarget);
+      }
     }
     
     const value = this.extractExpression(node.value);
@@ -64,6 +83,34 @@ export class PythonToIRVisitor extends BaseVisitor {
     }
     
     return IRFactory.assign(mappedTarget, value, node.lineno);
+  }
+
+  /** Visit tuple assignment (multiple assignment) */
+  private visitTupleAssignment(node: PythonASTNode): IR {
+    const targetNode = node.targets[0];
+    const valueNode = node.value;
+    
+    // Handle tuple swap: a, b = b, a or arr[i], arr[j] = arr[j], arr[i]
+    if (valueNode.type === 'Tuple' && targetNode.elts.length === 2 && valueNode.elts.length === 2) {
+      const leftTarget = this.extractExpression(targetNode.elts[0]);
+      const rightTarget = this.extractExpression(targetNode.elts[1]);
+      const leftValue = this.extractExpression(valueNode.elts[0]);
+      const rightValue = this.extractExpression(valueNode.elts[1]);
+      
+      // Create a sequence of assignments using TEMP variable
+      const tempAssign = IRFactory.assign('TEMP', leftValue, node.lineno);
+      const firstAssign = IRFactory.assign(leftTarget, rightValue, node.lineno);
+      const secondAssign = IRFactory.assign(rightTarget, 'TEMP', node.lineno);
+      
+      return {
+        kind: 'sequence',
+        text: '',
+        children: [tempAssign, firstAssign, secondAssign],
+        meta: { lineNumber: node.lineno }
+      };
+    }
+    
+    return this.createError('Complex tuple assignments not supported', node.lineno);
   }
   
   /** Visit Expression statement */
@@ -114,8 +161,8 @@ export class PythonToIRVisitor extends BaseVisitor {
       return IRFactory.output(args[0], node.lineno);
     }
     
-    // Multiple arguments - join with spaces
-    const joinedArgs = args.join(' + " " + ');
+    // Multiple arguments - join with commas
+    const joinedArgs = args.join(', ');
     return IRFactory.output(joinedArgs, node.lineno);
   }
   
@@ -149,6 +196,37 @@ export class PythonToIRVisitor extends BaseVisitor {
       text: 'INPUT',
       children: [],
       meta: { lineNumber: node.lineno }
+    };
+  }
+  
+  /** Visit Input function call in assignment */
+  private visitInputCallAssignment(node: PythonASTNode, variable: string): IR {
+    const args = node.args.map((arg: PythonASTNode) => this.extractExpression(arg));
+    
+    if (args.length > 0) {
+      // Has prompt - create OUTPUT followed by INPUT with variable
+      const prompt = args[0];
+      return {
+        kind: 'block',
+        text: '',
+        children: [
+          IRFactory.output(prompt, node.lineno),
+          {
+            kind: 'input',
+            text: `INPUT ${variable}`,
+            children: [],
+            meta: { variable, lineNumber: node.lineno }
+          }
+        ],
+        meta: { lineNumber: node.lineno }
+      };
+    }
+    
+    return {
+      kind: 'input',
+      text: `INPUT ${variable}`,
+      children: [],
+      meta: { variable, lineNumber: node.lineno }
     };
   }
   
@@ -323,7 +401,7 @@ export class PythonToIRVisitor extends BaseVisitor {
   /** Visit Function definition */
   visitFunctionDef(node: PythonASTNode): IR {
     const name = this.mapFunctionName(node.name);
-    const params = node.args.args.map((arg: any) => arg.arg || arg.id || String(arg));
+    const params = node.args.args.map((arg: any) => this.mapVariableName(arg.arg || arg.id || String(arg)));
     
     // Check if function has return statements
     const hasReturn = this.hasReturnStatement(node.body || []);
@@ -333,7 +411,7 @@ export class PythonToIRVisitor extends BaseVisitor {
     
     if (hasReturn) {
       // Function with return value
-      funcNode = IRFactory.function(name, params, 'UNKNOWN', node.lineno);
+      funcNode = IRFactory.function(name, params, 'value', node.lineno);
       endNode = IRFactory.endfunction(node.lineno);
     } else {
       // Procedure without return value
@@ -341,8 +419,19 @@ export class PythonToIRVisitor extends BaseVisitor {
       endNode = IRFactory.endprocedure(node.lineno);
     }
     
-    // Process body (placeholder)
-    funcNode.children.push(IRFactory.block(node.lineno));
+    // Process body
+    console.log('Processing function body:', node.body);
+    if (node.body && node.body.length > 0) {
+      for (const stmt of node.body) {
+        console.log('Processing statement:', stmt.type, stmt);
+        const childIR = this.visit(stmt);
+        console.log('Generated IR:', childIR);
+        if (childIR) {
+          funcNode.children.push(childIR);
+        }
+      }
+    }
+    console.log('Final funcNode children:', funcNode.children.length);
     
     return {
       kind: 'block',
@@ -388,7 +477,7 @@ export class PythonToIRVisitor extends BaseVisitor {
           if (args.length === 1) {
             return {
               kind: 'expression',
-              text: `LENGTH(${args[0]})`,
+              text: `SIZE(${args[0]})`,
               children: [],
               meta: { lineNumber: node.lineno }
             };
@@ -428,7 +517,7 @@ export class PythonToIRVisitor extends BaseVisitor {
       
       switch (funcName) {
         case 'len':
-          return args.length === 1 ? `LENGTH(${args[0]})` : `LENGTH(${args.join(', ')})`;
+          return args.length === 1 ? `SIZE(${args[0]})` : `SIZE(${args.join(', ')})`;
           
         case 'str':
           return args.length === 1 ? `STRING(${args[0]})` : `STRING(${args.join(', ')})`;

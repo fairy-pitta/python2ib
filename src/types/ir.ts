@@ -27,6 +27,7 @@ export type IRKind =
   | 'input'            // INPUT x
   | 'comment'          // // comment
   | 'expression'       // standalone expression
+  | 'sequence'         // sequence of statements
   
   // Control structures
   | 'if'               // IF condition
@@ -222,7 +223,7 @@ export class IRFactory {
   static endfunction(lineNumber?: number): IR {
     return {
       kind: 'endfunction',
-      text: 'ENDFUNCTION',
+      text: 'end FUNCTION',
       children: [],
       meta: { lineNumber }
     };
@@ -241,7 +242,7 @@ export class IRFactory {
   static endprocedure(lineNumber?: number): IR {
     return {
       kind: 'endprocedure',
-      text: 'ENDPROCEDURE',
+      text: 'end PROCEDURE',
       children: [],
       meta: { lineNumber }
     };

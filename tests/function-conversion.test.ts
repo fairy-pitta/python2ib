@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-// TODO: Import the actual converter when implemented
-// import { convertPythonToIB } from '../src/converter';
+import { convertPythonToIB } from '../src/converter';
 
 /**
  * Function and Procedure conversion tests
@@ -16,8 +14,7 @@ describe('Function and Procedure Conversion', () => {
       const expected = `PROCEDURE greet(NAME)
     output "Hello " + NAME
 end PROCEDURE`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert function with multiple parameters', () => {
@@ -28,8 +25,7 @@ end PROCEDURE`;
     output NAME
     output AGE
 end PROCEDURE`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert function with no parameters', () => {
@@ -38,8 +34,7 @@ end PROCEDURE`;
       const expected = `PROCEDURE sayHello()
     output "Hello World"
 end PROCEDURE`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -50,8 +45,7 @@ end PROCEDURE`;
       const expected = `FUNCTION add(A, B) RETURNS value
     RETURN A + B
 end FUNCTION`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert function with conditional return', () => {
@@ -67,8 +61,7 @@ end FUNCTION`;
         RETURN B
     end if
 end FUNCTION`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert function with multiple return statements', () => {
@@ -88,8 +81,7 @@ end FUNCTION`;
         RETURN "zero"
     end if
 end FUNCTION`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -97,22 +89,19 @@ end FUNCTION`;
     it('should convert function call in assignment', () => {
       const python = 'result = add(5, 3)';
       const expected = 'RESULT = add(5, 3)';
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert procedure call', () => {
       const python = 'greet("Alice")';
       const expected = 'greet("Alice")';
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert function call in expression', () => {
       const python = 'total = add(x, y) + 10';
       const expected = 'TOTAL = add(X, Y) + 10';
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -121,23 +110,20 @@ end FUNCTION`;
       const python = 'name = input("Enter your name: ")';
       const expected = `output "Enter your name: "
 INPUT NAME`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert input() without prompt', () => {
       const python = 'value = input()';
       const expected = 'INPUT VALUE';
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert input() with type conversion', () => {
       const python = 'age = int(input("Enter age: "))';
       const expected = `output "Enter age: "
 INPUT AGE`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 });

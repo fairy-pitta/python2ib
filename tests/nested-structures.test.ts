@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-// TODO: Import the actual converter when implemented
-// import { convertPythonToIB } from '../src/converter';
+import { convertPythonToIB } from '../src/converter';
 
 /**
  * Nested structure conversion tests
@@ -27,8 +26,7 @@ else:
 else
     output "x negative"
 end if`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert nested loops', () => {
@@ -40,8 +38,7 @@ end if`;
         output I, J
     end loop
 end loop`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert if inside while loop', () => {
@@ -55,8 +52,7 @@ end loop`;
     end if
     X = X + 1
 end loop`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -85,8 +81,7 @@ else:
 else
     output "a negative"
 end if`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert 3-level nested loops', () => {
@@ -101,8 +96,7 @@ end if`;
         end loop
     end loop
 end loop`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert mixed nested structures', () => {
@@ -119,8 +113,7 @@ end loop`;
         end loop
     end if
 end loop`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -140,8 +133,7 @@ end loop`;
         end loop
     end if
 end loop`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert complex nested function', () => {
@@ -170,8 +162,7 @@ end loop`;
         end loop
     end loop
 end PROCEDURE`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -192,8 +183,7 @@ end PROCEDURE`;
     end loop
     RETURN MAX_VAL
 end FUNCTION`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert procedure with complex nesting', () => {
@@ -215,8 +205,7 @@ end FUNCTION`;
         end loop
     end loop
 end PROCEDURE`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -234,8 +223,7 @@ end PROCEDURE`;
         output "y negative"
     end if
 end if`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should handle single statement in nested block', () => {
@@ -247,8 +235,7 @@ end if`;
         output I
     end if
 end loop`;
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 });

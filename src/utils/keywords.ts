@@ -57,7 +57,7 @@ export const KEYWORD_MAPPING: Record<string, string> = {
 export const BUILTIN_FUNCTION_MAPPING: Record<string, string> = {
   'print': 'OUTPUT',
   'input': 'INPUT',
-  'len': 'LENGTH',
+  'len': 'SIZE',
   'str': 'STRING',
   'int': 'INTEGER',
   'float': 'REAL',
@@ -223,6 +223,14 @@ export const SPECIAL_CONSTRUCTS = {
       if (!isNaN(num)) {
         return (num - 1).toString();
       }
+      // If expression already contains subtraction at the end, increment the number
+      if (endArg.match(/ - \d+$/)) {
+        return endArg.replace(/ - (\d+)$/, (_, num) => ` - ${parseInt(num) + 1}`);
+      }
+      // If expression contains subtraction but not at the end, wrap and subtract 1
+      if (endArg.includes(' - ')) {
+        return `(${endArg}) - 1`;
+      }
       // If not a number, return expression
       return `${endArg} - 1`;
     };
@@ -244,6 +252,6 @@ export const SPECIAL_CONSTRUCTS = {
   
   /** Handle len() function conversion */
   convertLen(arg: string): string {
-    return `LENGTH(${arg})`;
+    return `SIZE(${arg})`;
   }
 };
