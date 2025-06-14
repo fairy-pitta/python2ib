@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-// TODO: Import the actual converter when implemented
-// import { convertPythonToIB } from '../src/converter';
+import { convertPythonToIB } from '../src/converter';
 
 /**
  * Tests based on actual IB Pseudocode examples from IB-pseudocode-rules.md
@@ -38,8 +37,7 @@ else
     output "No non-zero values"
 end if`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -71,8 +69,7 @@ loop while NAMES.hasNext()
     end if
 end loop`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -113,8 +110,7 @@ loop until F * F > NUM
 end loop
 output FACTORS`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -136,8 +132,7 @@ loop I from 0 to COUNT - 1
     MYARRAY[I] = STACK.pop()
 end loop`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -152,8 +147,7 @@ if MYWORD = "the" then
     output MYWORD
 end if`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -170,8 +164,7 @@ loop while COL.hasNext()
     output ITEM
 end loop`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -188,8 +181,7 @@ if NOT STACK.isEmpty() then
     output "Stack not empty"
 end if`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -206,8 +198,7 @@ if NOT QUEUE.isEmpty() then
     output "Queue not empty"
 end if`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -242,8 +233,7 @@ end if`;
     RETURN -1
 end FUNCTION`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 
@@ -266,8 +256,7 @@ else
     output "Hello " + NAME + ", you are a minor"
 end if`;
       
-      // expect(convertPythonToIB(python)).toBe(expected);
-      expect(true).toBe(true); // Placeholder
+      expect(convertPythonToIB(python)).toBe(expected);
     });
   });
 });

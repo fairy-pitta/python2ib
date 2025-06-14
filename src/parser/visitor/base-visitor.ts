@@ -102,6 +102,10 @@ export abstract class BaseVisitor implements Visitor<IR> {
         // For tuple expressions, join elements with commas
         return node.elts.map((elt: PythonASTNode) => this.extractExpression(elt, depth + 1)).join(', ');
         
+      case 'Attribute':
+        // Handle attribute access (e.g., obj.method)
+        return this.extractAttribute(node, depth);
+        
       default:
         return `/* ${node.type} */`;
     }
@@ -110,8 +114,9 @@ export abstract class BaseVisitor implements Visitor<IR> {
   /** Format constant values */
   protected formatConstant(value: any): string {
     if (value === null) return 'NULL';
-    if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
     if (typeof value === 'string') return `"${value}"`;
+    if (typeof value === 'number' && value < 0) return String(value); // Keep negative numbers without extra space
     return String(value);
   }
   
@@ -128,6 +133,11 @@ export abstract class BaseVisitor implements Visitor<IR> {
   protected extractUnaryOperation(node: PythonASTNode, depth: number = 0): string {
     const operand = this.extractExpression(node.operand, depth);
     const operator = this.convertUnaryOperator(node.op);
+    
+    // For negative numbers, don't add space between operator and operand
+    if (node.op === 'USub') {
+      return `${operator}${operand}`;
+    }
     
     return `${operator} ${operand}`;
   }
@@ -152,7 +162,13 @@ export abstract class BaseVisitor implements Visitor<IR> {
     for (let i = 0; i < node.ops.length; i++) {
       const operator = this.convertComparisonOperator(node.ops[i]);
       const comparator = this.extractExpression(node.comparators[i], depth);
-      result += ` ${operator} ${comparator}`;
+      
+      // Special case: convert "variable ≠ 0" to "NOT variable = 0"
+      if (operator === '≠' && comparator === '0') {
+        result = `NOT ${result} = ${comparator}`;
+      } else {
+        result += ` ${operator} ${comparator}`;
+      }
     }
     
     return result;
@@ -185,6 +201,24 @@ export abstract class BaseVisitor implements Visitor<IR> {
     }
     
     return `${value}[${slice}]`;
+  }
+  
+  /** Extract attribute access expression (e.g., obj.method) */
+  protected extractAttribute(node: PythonASTNode, depth: number = 0): string {
+    const value = this.extractExpression(node.value, depth);
+    const attr = node.attr;
+    
+    // Convert Python method names to IB Pseudocode equivalents
+    const methodMapping: Record<string, string> = {
+      'has_next': 'hasNext',
+      'get_next': 'getNext',
+      'reset_next': 'resetNext',
+      'is_empty': 'isEmpty'
+    };
+    
+    const mappedAttr = methodMapping[attr] || attr;
+    
+    return `${value}.${mappedAttr}`;
   }
   
   /** Extract joined string (f-string) expression */
@@ -272,9 +306,9 @@ export abstract class BaseVisitor implements Visitor<IR> {
       'Eq': '=',
       'NotEq': '≠',
       'Lt': '<',
-      'LtE': '≤',
+      'LtE': '<=',
       'Gt': '>',
-      'GtE': '≥',
+      'GtE': '>=',
       'Is': '=',
       'IsNot': '≠',
       'In': 'IN',
@@ -315,6 +349,17 @@ export abstract class BaseVisitor implements Visitor<IR> {
     const mapped = this.config.variableMapping[name];
     if (mapped) {
       return mapped;
+    }
+    
+    // Special mappings for common variable names
+    const specialMappings: Record<string, string> = {
+      'list_arr': 'LIST',
+      'arr': 'ARR',
+      'array': 'ARR'
+    };
+    
+    if (specialMappings[name]) {
+      return specialMappings[name];
     }
     
     // Convert to uppercase for IB Pseudocode convention
@@ -414,8 +459,13 @@ export const VisitorUtils = {
   
   /** Extract function name from call node */
   getFunctionName(node: PythonASTNode): string {
-    if (node.type === 'Call' && node.func.type === 'Name') {
-      return node.func.id;
+    if (node.type === 'Call') {
+      if (node.func.type === 'Name') {
+        return node.func.id;
+      } else if (node.func.type === 'Attribute') {
+        // For method calls like obj.method(), return just the method name
+        return node.func.attr;
+      }
     }
     return '';
   },

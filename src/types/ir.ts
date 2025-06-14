@@ -35,6 +35,7 @@ export type IRKind =
   | 'else'             // ELSE
   | 'endif'            // ENDIF
   | 'while'            // WHILE condition
+  | 'until'            // UNTIL condition
   | 'endwhile'         // ENDWHILE
   | 'for'              // FOR i ← start TO end
   | 'next'             // NEXT i
@@ -166,6 +167,15 @@ export class IRFactory {
     return {
       kind: 'while',
       text: `loop while ${condition}`,
+      children: [],
+      meta: { condition, lineNumber }
+    };
+  }
+  
+  static until(condition: string, lineNumber?: number): IR {
+    return {
+      kind: 'until',
+      text: `loop until ${condition}`,
       children: [],
       meta: { condition, lineNumber }
     };

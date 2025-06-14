@@ -1,0 +1,9 @@
+loop I from 0 to 2
+    if I mod 2 = 0 then
+        loop J from 0 to 1
+            output I + ", " + J
+        end loop
+    else
+        output "odd"
+    end if
+end loop

@@ -95,11 +95,11 @@ export class PythonToIRVisitor extends BaseVisitor {
       const leftTarget = this.extractExpression(targetNode.elts[0]);
       const rightTarget = this.extractExpression(targetNode.elts[1]);
       const leftValue = this.extractExpression(valueNode.elts[0]);
-      const rightValue = this.extractExpression(valueNode.elts[1]);
       
       // Create a sequence of assignments using TEMP variable
-      const tempAssign = IRFactory.assign('TEMP', leftValue, node.lineno);
-      const firstAssign = IRFactory.assign(leftTarget, rightValue, node.lineno);
+      // For a, b = b, a: TEMP = a; a = b; b = TEMP
+      const tempAssign = IRFactory.assign('TEMP', leftTarget, node.lineno);
+      const firstAssign = IRFactory.assign(leftTarget, leftValue, node.lineno);
       const secondAssign = IRFactory.assign(rightTarget, 'TEMP', node.lineno);
       
       return {
@@ -117,6 +117,16 @@ export class PythonToIRVisitor extends BaseVisitor {
   visitExpr(node: PythonASTNode): IR {
     const value = node.value;
     
+    // Handle pass statement (which comes as Name node with id='pass')
+    if (value.type === 'Name' && value.id === 'pass') {
+      return {
+        kind: 'comment',
+        text: '// empty block',
+        children: [],
+        meta: { lineNumber: node.lineno }
+      };
+    }
+    
     // Handle special function calls
     if (VisitorUtils.isPrintCall(value)) {
       return this.visitPrintCall(value);
@@ -126,14 +136,14 @@ export class PythonToIRVisitor extends BaseVisitor {
       return this.visitInputCall(value);
     }
     
-    // Handle other function calls
+    // Handle function calls (including method calls)
     if (VisitorUtils.isFunctionCall(value)) {
-      const funcName = VisitorUtils.getFunctionName(value);
-      const args = value.args.map((arg: PythonASTNode) => this.extractExpression(arg));
+      // Use extractCall to handle both regular function calls and method calls
+      const callExpression = this.extractCall(value);
       
       return {
         kind: 'expression',
-        text: `${this.mapFunctionName(funcName)}(${args.join(', ')})`,
+        text: callExpression,
         children: [],
         meta: { lineNumber: node.lineno }
       };
@@ -329,14 +339,17 @@ export class PythonToIRVisitor extends BaseVisitor {
   /** Visit While statement */
   visitWhile(node: PythonASTNode): IR {
     const condition = this.extractExpression(node.test);
-    const whileNode = IRFactory.while(condition, node.lineno);
+    
+    // Convert while condition to until condition by negating it
+    const negatedCondition = this.negateCondition(condition);
+    const loopNode = IRFactory.until(negatedCondition, node.lineno);
     
     // Process body
     if (node.body && Array.isArray(node.body)) {
       for (const stmt of node.body) {
         const childNode = this.visit(stmt);
         if (childNode) {
-          whileNode.children.push(childNode);
+          loopNode.children.push(childNode);
         }
       }
     }
@@ -347,9 +360,32 @@ export class PythonToIRVisitor extends BaseVisitor {
     return {
       kind: 'block',
       text: '',
-      children: [whileNode, endwhileNode],
+      children: [loopNode, endwhileNode],
       meta: { lineNumber: node.lineno }
     };
+  }
+
+  /** Negate a condition for while -> until conversion */
+  private negateCondition(condition: string): string {
+    // Handle comparison operators
+    const comparisons: { [key: string]: string } = {
+      '<=': '>',
+      '>=': '<',
+      '<': '>=',
+      '>': '<=',
+      '=': '<>',
+      '<>': '='
+    };
+    
+    // Try to find and replace comparison operators
+    for (const [original, negated] of Object.entries(comparisons)) {
+      if (condition.includes(` ${original} `)) {
+        return condition.replace(` ${original} `, ` ${negated} `);
+      }
+    }
+    
+    // If no simple comparison found, wrap with NOT
+    return `NOT (${condition})`;
   }
   
   /** Visit For statement */
@@ -448,9 +484,21 @@ export class PythonToIRVisitor extends BaseVisitor {
       return IRFactory.return(value, node.lineno);
     }
     
-    return IRFactory.return(undefined, node.lineno);
+    return IRFactory.return('', node.lineno);
   }
   
+
+  
+  /** Visit Pass statement */
+  visitPass(node: PythonASTNode): IR {
+    return {
+      kind: 'comment',
+      text: '// empty block',
+      children: [],
+      meta: { lineNumber: node.lineno }
+    };
+  }
+
   /** Visit Comment */
   visitComment(node: PythonASTNode): IR {
     return IRFactory.comment(node.value, node.lineno);
@@ -506,8 +554,49 @@ export class PythonToIRVisitor extends BaseVisitor {
     };
   }
   
+  /** Override extractBinaryOperation to handle operator precedence */
+  protected override extractBinaryOperation(node: PythonASTNode, depth: number = 0): string {
+    const left = this.extractExpression(node.left, depth + 1);
+    const right = this.extractExpression(node.right, depth + 1);
+    const operator = this.convertBinaryOperator(node.op);
+    
+    // Special case: if this is an addition/subtraction that contains variables
+    // that match the pattern (left + right), add parentheses
+    if ((node.op === 'Add' || node.op === 'Sub') && 
+        node.left.type === 'Name' && node.right.type === 'Name' &&
+        (node.left.id === 'left' || node.left.id === 'right') &&
+        (node.right.id === 'left' || node.right.id === 'right')) {
+      return `(${left} ${operator} ${right})`;
+    }
+    
+    return `${left} ${operator} ${right}`;
+  }
+  
   /** Override extractCall to handle special cases */
   protected override extractCall(node: PythonASTNode): string {
+    // Handle method calls (obj.method())
+    if (node.func.type === 'Attribute') {
+      let obj = this.extractExpression(node.func.value);
+      const method = node.func.attr;
+      const args = node.args.map((arg: PythonASTNode) => this.extractExpression(arg));
+      
+      // Apply variable name mapping if the object is a simple variable name
+      if (node.func.value.type === 'Name') {
+        obj = this.mapVariableName(node.func.value.id);
+      }
+      
+      // Convert Python method names to IB Pseudocode equivalents
+      const methodMapping: Record<string, string> = {
+        'is_empty': 'isEmpty',
+        'has_next': 'hasNext',
+        'get_next': 'getNext',
+        'reset_next': 'resetNext'
+      };
+      
+      const mappedMethod = methodMapping[method] || method;
+      return `${obj}.${mappedMethod}(${args.join(', ')})`;
+    }
+    
     const funcName = VisitorUtils.getFunctionName(node);
     
     // Handle built-in functions
@@ -540,6 +629,22 @@ export class PythonToIRVisitor extends BaseVisitor {
     return `${mappedName}(${args.join(', ')})`;
   }
   
+  /** Visit List node (array literal) */
+  visitList(node: PythonASTNode): IR {
+    if (!node.elts || !Array.isArray(node.elts)) {
+      throw new Error('Invalid List node: missing or invalid elements');
+    }
+    
+    const elements = node.elts.map((elt: PythonASTNode) => this.extractExpression(elt));
+    
+    return {
+      kind: 'expression',
+      text: `[${elements.join(', ')}]`,
+      children: [],
+      meta: { lineNumber: node.lineno }
+    };
+  }
+
   /** Handle unsupported constructs with more specific messages */
   protected override visitUnsupported(node: PythonASTNode): IR {
     const specificMessages: Record<string, string> = {

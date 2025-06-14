@@ -1,0 +1,13 @@
+// 複数構文のテスト
+FUNCTION factorial(N) RETURNS value
+    if N <= 1 then
+        RETURN 1
+    else
+        RETURN N * factorial(N - 1)
+    end if
+end FUNCTION
+// WARNING: For loop over NUMBERS not fully supported
+loop while SIZE(NUMBERS) > 0
+    NUMBERS.pop()
+    output "Remaining: " + LEN(NUMBERS)
+end loop

@@ -1,49 +1,23 @@
 import { convertPythonToIB } from './dist/converter.js';
 
-// Test cases for tuple assignment detection
-const testCases = [
-  {
-    name: 'Simple tuple assignment',
-    code: 'a, b = b, a'
-  },
-  {
-    name: 'Array element swap',
-    code: 'arr[j], arr[j + 1] = arr[j + 1], arr[j]'
-  },
-  {
-    name: 'Bubble sort with tuple assignment',
-    code: `def bubble_sort(arr):
-    n = len(arr)
-    for i in range(n):
-        for j in range(0, n - i - 1):
-            if arr[j] > arr[j + 1]:
-                arr[j], arr[j + 1] = arr[j + 1], arr[j]`
-  },
-  {
-    name: 'Assignment without tuple',
-    code: 'x = 5'
-  }
-];
+// Debug tuple assignment issue
+console.log('=== Debugging Tuple Assignment ===');
+const python = `arr[j], arr[j + 1] = arr[j + 1], arr[j]`;
+const result = convertPythonToIB(python);
+console.log('Python code:');
+console.log(python);
+console.log('\nConverted result:');
+console.log(result);
+console.log('\nExpected:');
+console.log('TEMP = ARR[J]\nARR[J] = ARR[J + 1]\nARR[J + 1] = TEMP');
 
-testCases.forEach((testCase, index) => {
-  console.log(`\n=== Test ${index + 1}: ${testCase.name} ===`);
-  console.log('Input:');
-  console.log(testCase.code);
-  
-  try {
-    const result = convertPythonToIB(testCase.code);
-    console.log('\nOutput:');
-    console.log(result);
-    
-    console.log('\nAnalysis:');
-    console.log('- Contains TEMP:', result.includes('TEMP'));
-    console.log('- Contains tuple assignment pattern:', result.includes('ARR[J + 1]\n    ARR[J] = ARR[J + 1]\n    ARR[J + 1] = TEMP'));
-    console.log('- Lines count:', result.split('\n').length);
-    
-  } catch (error) {
-    console.log('\nError:', error.message);
-    if (error.stack) {
-      console.log('Stack:', error.stack.split('\n').slice(0, 5).join('\n'));
-    }
-  }
-});
+// Test simple tuple assignment
+console.log('\n\n=== Simple Tuple Assignment ===');
+const python2 = `a, b = b, a`;
+const result2 = convertPythonToIB(python2);
+console.log('Python code:');
+console.log(python2);
+console.log('\nConverted result:');
+console.log(result2);
+console.log('\nExpected:');
+console.log('TEMP = A\nA = B\nB = TEMP');

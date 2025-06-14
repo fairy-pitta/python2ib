@@ -65,6 +65,7 @@ export enum TokenType {
   RBRACKET = 'RBRACKET',
   COMMA = 'COMMA',
   COLON = 'COLON',
+  DOT = 'DOT',
   
   // Special
   NEWLINE = 'NEWLINE',
@@ -368,7 +369,8 @@ export class PythonLexer {
       '[': TokenType.LBRACKET,
       ']': TokenType.RBRACKET,
       ',': TokenType.COMMA,
-      ':': TokenType.COLON
+      ':': TokenType.COLON,
+      '.': TokenType.DOT
     };
     
     return operators[char] || null;
@@ -416,42 +418,36 @@ export class ASTParser {
   }
   
   private parseStatement(): PythonASTNode | null {
-    try {
-      if (this.check(TokenType.COMMENT)) {
-        return this.parseComment();
-      }
-      
-      if (this.check(TokenType.IF)) {
-        return this.parseIf();
-      }
-      
-      if (this.check(TokenType.WHILE)) {
-        return this.parseWhile();
-      }
-      
-      if (this.check(TokenType.FOR)) {
-        return this.parseFor();
-      }
-      
-      if (this.check(TokenType.DEF)) {
-        return this.parseFunction();
-      }
-      
-      if (this.check(TokenType.RETURN)) {
-        return this.parseReturn();
-      }
-      
-      if (this.check(TokenType.PRINT)) {
-        return this.parsePrint();
-      }
-      
-      // Try assignment or expression
-      return this.parseAssignmentOrExpression();
-    } catch (error) {
-      // Skip to next statement on error
-      this.synchronize();
-      return null;
+    if (this.check(TokenType.COMMENT)) {
+      return this.parseComment();
     }
+    
+    if (this.check(TokenType.IF)) {
+      return this.parseIf();
+    }
+    
+    if (this.check(TokenType.WHILE)) {
+      return this.parseWhile();
+    }
+    
+    if (this.check(TokenType.FOR)) {
+      return this.parseFor();
+    }
+    
+    if (this.check(TokenType.DEF)) {
+      return this.parseFunction();
+    }
+    
+    if (this.check(TokenType.RETURN)) {
+      return this.parseReturn();
+    }
+    
+    if (this.check(TokenType.PRINT)) {
+      return this.parsePrint();
+    }
+    
+    // Try assignment or expression
+    return this.parseAssignmentOrExpression();
   }
   
   private parseComment(): PythonASTNode {
@@ -897,6 +893,8 @@ export class ASTParser {
         expr = this.finishCall(expr);
       } else if (this.match(TokenType.LBRACKET)) {
         expr = this.finishSubscript(expr);
+      } else if (this.match(TokenType.DOT)) {
+        expr = this.finishAttribute(expr);
       } else {
         break;
       }
@@ -932,6 +930,17 @@ export class ASTParser {
       type: 'Subscript',
       value,
       slice,
+      lineno: value.lineno
+    };
+  }
+  
+  private finishAttribute(value: PythonASTNode): PythonASTNode {
+    const attr = this.consume(TokenType.IDENTIFIER, "Expected attribute name after '.'");
+    
+    return {
+      type: 'Attribute',
+      value,
+      attr: attr.value,
       lineno: value.lineno
     };
   }
@@ -990,6 +999,24 @@ export class ASTParser {
       const expr = this.parseExpression();
       this.consume(TokenType.RPAREN, "Expected ')' after expression");
       return expr;
+    }
+    
+    if (this.match(TokenType.LBRACKET)) {
+      const elements: PythonASTNode[] = [];
+      
+      if (!this.check(TokenType.RBRACKET)) {
+        do {
+          elements.push(this.parseExpression());
+        } while (this.match(TokenType.COMMA));
+      }
+      
+      this.consume(TokenType.RBRACKET, "Expected ']' after list elements");
+      
+      return {
+        type: 'List',
+        elts: elements,
+        lineno: this.previous().line
+      };
     }
     
     throw new Error(`Unexpected token: ${this.peek().value} at line ${this.peek().line}`);
@@ -1072,22 +1099,5 @@ export class ASTParser {
     throw new Error(`${message}. Got '${current.value}' at line ${current.line}`);
   }
   
-  private synchronize(): void {
-    this.advance();
-    
-    while (!this.isAtEnd()) {
-      if (this.previous().type === TokenType.NEWLINE) return;
-      
-      switch (this.peek().type) {
-        case TokenType.IF:
-        case TokenType.WHILE:
-        case TokenType.FOR:
-        case TokenType.DEF:
-        case TokenType.RETURN:
-          return;
-      }
-      
-      this.advance();
-    }
-  }
+
 }

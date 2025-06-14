@@ -77,6 +77,10 @@ export class IBPseudocodeEmitter {
         this.emitWhile(node);
         break;
         
+      case 'until':
+        this.emitUntil(node);
+        break;
+        
       case 'endwhile':
         this.emitEndwhile(node);
         break;
@@ -222,6 +226,20 @@ export class IBPseudocodeEmitter {
   
   /** Emit while loop */
   private emitWhile(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+  
+  /** Emit until loop */
+  private emitUntil(node: IR): void {
     const line = this.indentManager.current + node.text;
     this.output.push(line);
     

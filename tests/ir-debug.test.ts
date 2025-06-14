@@ -40,7 +40,11 @@ describe('IR Structure Debug', () => {
     
     const visitor = new PythonToIRVisitor({
       indentSize: 4,
-      outputFormat: 'plain',
+      format: 'plain',
+      indentStyle: 'spaces',
+      includeLineNumbers: false,
+      includeOriginalCode: false,
+      validateSyntax: true,
       functionMapping: {},
       variableMapping: {}
     });
