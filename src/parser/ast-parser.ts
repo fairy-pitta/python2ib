@@ -888,6 +888,7 @@ export class ASTParser {
   private parseCall(): PythonASTNode {
     let expr = this.parsePrimary();
     
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       if (this.match(TokenType.LPAREN)) {
         expr = this.finishCall(expr);

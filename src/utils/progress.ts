@@ -66,7 +66,7 @@ export class ProgressBar {
     const filled = Math.floor((this.current / total) * width!);
     const empty = width! - filled;
     
-    let bar = '█'.repeat(filled) + '░'.repeat(empty);
+    const bar = '█'.repeat(filled) + '░'.repeat(empty);
     let output = `\r${label}: [${bar}]`;
     
     if (showPercentage) {
@@ -165,8 +165,10 @@ export class BatchProgress {
     this.progressBar.complete();
     
     // Print summary
+    // eslint-disable-next-line no-console
     console.log(`\nCompleted: ${this.completed}/${this.total}`);
     if (this.failed > 0) {
+      // eslint-disable-next-line no-console
       console.log(`Failed: ${this.failed}/${this.total}`);
     }
   }
