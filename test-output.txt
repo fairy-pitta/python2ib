@@ -1,5 +1,0 @@
-X = 5
-output X
-if X > 0 then
-    output "positive"
-end if
