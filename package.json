@@ -40,15 +40,20 @@
     "ast",
     "parser"
   ],
-  "author": "",
+  "author": "fairy-pitta",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/python2ib.git"
+    "url": "https://github.com/fairy-pitta/python2ib.git"
   },
+  "bugs": {
+    "url": "https://github.com/fairy-pitta/python2ib/issues"
+  },
+  "homepage": "https://github.com/fairy-pitta/python2ib#readme",
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "engines": {

@@ -42,6 +42,30 @@ export interface ConvertOptions {
   
   /** Custom function name mappings */
   functionMapping?: Record<string, string>;
+  
+  /** Whether to preserve comments from original code */
+  preserveComments?: boolean;
+  
+  /** Custom operator mappings */
+  customOperators?: Record<string, string>;
+  
+  /** Custom keyword mappings */
+  customKeywords?: Record<string, string>;
+  
+  /** Output formatting options */
+  outputOptions?: {
+    includeLineNumbers?: boolean;
+    includeComments?: boolean;
+    wrapInCodeBlock?: boolean;
+  };
+  
+  /** Conversion rule options */
+  conversionRules?: {
+    forceExplicitTypes?: boolean;
+    convertFStrings?: boolean;
+    expandCompoundAssignments?: boolean;
+    simplifyExpressions?: boolean;
+  };
 }
 
 /** Default configuration */
@@ -56,7 +80,21 @@ export const DEFAULT_CONFIG: Required<ConvertOptions> = {
   strictMode: false,
   normalizeIndentation: false,
   variableMapping: {},
-  functionMapping: {}
+  functionMapping: {},
+  preserveComments: true,
+  customOperators: {},
+  customKeywords: {},
+  outputOptions: {
+    includeLineNumbers: false,
+    includeComments: true,
+    wrapInCodeBlock: false
+  },
+  conversionRules: {
+    forceExplicitTypes: false,
+    convertFStrings: true,
+    expandCompoundAssignments: true,
+    simplifyExpressions: false
+  }
 };
 
 /** Merge user options with defaults */

@@ -24,6 +24,25 @@ export * from './parser/index.js';
 // Export emitter
 export * from './emitter/index.js';
 
+// Export error classes
+export {
+  PythonSyntaxError,
+  UnsupportedSyntaxError,
+  ConversionError,
+  ConfigurationError,
+  createUnsupportedSyntaxError,
+  formatErrorForCLI
+} from './errors/index.js';
+
+// Export configuration functions
+export {
+  loadConfigFromFile,
+  mergeConfig,
+  getConfig,
+  createSampleConfig,
+  DEFAULT_CONFIG
+} from './config/index.js';
+
 import { Parser } from './parser/index.js';
 import { IBPseudocodeEmitter, emitIBPseudocode } from './emitter/index.js';
 import { ConvertOptions, mergeConfig, validateConfig } from './types/config.js';

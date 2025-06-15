@@ -1,5 +1,9 @@
 # Python to IB Pseudocode Converter
 
+[![npm version](https://badge.fury.io/js/pyton2ib.svg)](https://badge.fury.io/js/pyton2ib)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js CI](https://github.com/fairy-pitta/python2ib/workflows/Node.js%20CI/badge.svg)](https://github.com/fairy-pitta/python2ib/actions)
+
 A TypeScript library and CLI tool that converts Python code to IB (International Baccalaureate) Pseudocode format.
 
 ## Features
@@ -39,11 +43,66 @@ A TypeScript library and CLI tool that converts Python code to IB (International
 - Decorators
 - Context managers (with statements)
 
+## Error Handling
+
+The library provides detailed error messages for unsupported syntax:
+
+```typescript
+import { convertPythonToIB, UnsupportedSyntaxError, PythonSyntaxError } from 'python2ib';
+
+try {
+  const result = convertPythonToIB(pythonCode);
+  console.log(result);
+} catch (error) {
+  if (error instanceof UnsupportedSyntaxError) {
+    console.error('Unsupported syntax:', error.message);
+    console.log('Suggestion:', error.suggestion);
+  } else if (error instanceof PythonSyntaxError) {
+    console.error('Python syntax error:', error.message);
+  }
+}
+```
+
+## Limitations
+
+Currently, the following Python features are **not supported**:
+
+- Classes and object-oriented programming
+- Exception handling (try/except)
+- Decorators
+- Lambda functions
+- List comprehensions
+- Import statements
+- Async/await
+- Context managers (with statements)
+
+For a complete list of limitations and workarounds, see [docs/limitations.md](docs/limitations.md).
+
+## Troubleshooting
+
+For common issues and solutions, see [docs/troubleshooting.md](docs/troubleshooting.md).
+
+Quick fixes:
+- **Syntax errors**: Validate your Python code first
+- **Unsupported features**: Check the limitations list
+- **Performance issues**: Process large files in smaller chunks
+
 ## Installation
 
+### Global Installation (for CLI usage)
 ```bash
-npm install python2ib
+npm install -g pyton2ib
 ```
+
+### Local Installation (for programmatic usage)
+```bash
+npm install pyton2ib
+```
+
+### Requirements
+
+- Node.js 16.0.0 or higher
+- npm 7.0.0 or higher
 
 ## Quick Start
 
@@ -190,6 +249,55 @@ area ← calculate_area(5, 3)
 OUTPUT "Area:" + " " + area
 ```
 
+## Configuration
+
+### Programmatic Configuration
+
+You can customize the conversion behavior:
+
+```typescript
+import { convertPythonToIB } from 'python2ib';
+
+const options = {
+  indentSize: 2,        // Use 2 spaces for indentation
+  outputFormat: 'markdown', // Output as markdown code block
+  preserveComments: true,   // Keep Python comments as IB comments
+  strictMode: false,        // Allow partial conversion on errors
+  customKeywords: {         // Custom keyword mappings
+    'print': 'DISPLAY',
+    'input': 'GET'
+  }
+};
+
+const result = convertPythonToIB(pythonCode, options);
+```
+
+### Configuration Files
+
+Create a `.python2ibrc` file in your project root:
+
+```json
+{
+  "indentSize": 4,
+  "outputFormat": "plain",
+  "preserveComments": true,
+  "customKeywords": {
+    "print": "OUTPUT",
+    "input": "INPUT"
+  },
+  "outputOptions": {
+    "includeLineNumbers": false,
+    "includeComments": true
+  }
+}
+```
+
+Generate a sample config file:
+
+```bash
+python2ib --init-config
+```
+
 ## API Reference
 
 ### Main Classes
@@ -273,7 +381,7 @@ Options:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/python2ib.git
+git clone https://github.com/fairy-pitta/python2ib.git
 cd python2ib
 
 # Install dependencies
@@ -348,4 +456,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/yourusername/python2ib).
+For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/fairy-pitta/python2ib).

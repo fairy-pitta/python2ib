@@ -1,0 +1,29 @@
+{
+  "indentSize": 4,
+  "outputFormat": "plain",
+  "preserveComments": true,
+  "strictMode": false,
+  "customOperators": {
+    "+=": "← {left} + {right}",
+    "-=": "← {left} - {right}",
+    "*=": "← {left} * {right}",
+    "/=": "← {left} / {right}"
+  },
+  "customKeywords": {
+    "print": "OUTPUT",
+    "input": "INPUT",
+    "len": "LENGTH",
+    "range": "RANGE"
+  },
+  "outputOptions": {
+    "includeLineNumbers": false,
+    "includeComments": true,
+    "wrapInCodeBlock": false
+  },
+  "conversionRules": {
+    "forceExplicitTypes": false,
+    "convertFStrings": true,
+    "expandCompoundAssignments": true,
+    "simplifyExpressions": false
+  }
+}

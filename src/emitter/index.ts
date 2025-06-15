@@ -384,7 +384,21 @@ export function emitIBPseudocodeDefault(ir: IR): string {
     variableMapping: {},
     functionMapping: {},
     strictMode: false,
-    normalizeIndentation: false
+    normalizeIndentation: false,
+    preserveComments: true,
+    customOperators: {},
+    customKeywords: {},
+    outputOptions: {
+      includeLineNumbers: false,
+      includeComments: true,
+      wrapInCodeBlock: false
+    },
+    conversionRules: {
+      forceExplicitTypes: false,
+      convertFStrings: true,
+      expandCompoundAssignments: true,
+      simplifyExpressions: false
+    }
   };
   
   return emitIBPseudocode(ir, defaultConfig);
