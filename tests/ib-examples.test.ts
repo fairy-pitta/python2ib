@@ -94,7 +94,7 @@ print(factors)`;
       const expected = `NUM = 140
 F = 1
 FACTORS = 0
-loop until F * F > NUM
+loop while F * F <= NUM
     if NUM mod F = 0 then
         D = NUM div F
         output F, "*", D

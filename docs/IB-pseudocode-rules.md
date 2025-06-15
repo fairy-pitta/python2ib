@@ -185,3 +185,62 @@ loop I from 0 to COUNT-1
     MYARRAY[I] = STACK.pop()
 end loop
 ```
+
+## Functions and Procedures
+
+### Procedures (No Return Value)
+
+* Use `PROCEDURE` for functions that do not return a value
+* End with `end PROCEDURE`
+
+```plaintext
+PROCEDURE greet(NAME)
+    output "Hello ", NAME
+end PROCEDURE
+```
+
+### Functions (With Return Value)
+
+* Use `FUNCTION` for functions that return a value
+* Include `RETURNS value` in declaration
+* End with `end FUNCTION`
+
+```plaintext
+FUNCTION add(A, B) RETURNS value
+    return A + B
+end FUNCTION
+```
+
+### Function Calls
+
+* Procedure calls: `procedureName(arguments)`
+* Function calls in assignment: `RESULT = functionName(arguments)`
+* Function calls in expressions: `if functionName(X) > 10 then`
+
+## Input and Output
+
+### Input Statements
+
+* Input with prompt: Display prompt first, then input
+* Input without prompt: Direct input
+
+```plaintext
+// With prompt
+output "Enter your name: "
+INPUT NAME
+
+// Without prompt
+INPUT VALUE
+```
+
+## Built-in Functions
+
+### Array Size Function
+
+* Use `SIZE(array_name)` to get array length
+
+```plaintext
+loop I from 0 to SIZE(NUMBERS) - 1
+    output NUMBERS[I]
+end loop
+```

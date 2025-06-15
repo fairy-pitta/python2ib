@@ -39,7 +39,7 @@ if x > 0:
     const command = `npm run dev -- --input "${inputFile}" --output "${outputFile}"`;
     
     try {
-      execSync(command, { cwd: '/Users/wao_singapore/python2ib', stdio: 'pipe' });
+      execSync(command, { cwd: '/Users/shuna/pyton2ib', stdio: 'pipe' });
       
       // 出力ファイルが作成されたことを確認
       expect(existsSync(outputFile)).toBe(true);
@@ -73,7 +73,7 @@ result = add(3, 4)`;
     const command = `npm run dev -- --input "${inputFile}" --output "${outputFile}"`;
     
     try {
-      execSync(command, { cwd: '/Users/wao_singapore/python2ib', stdio: 'pipe' });
+      execSync(command, { cwd: '/Users/shuna/pyton2ib', stdio: 'pipe' });
       
       // 出力ファイルが作成されたことを確認
       expect(existsSync(outputFile)).toBe(true);
@@ -106,7 +106,7 @@ result = add(3, 4)`;
     const command = `npm run dev -- --input "${inputFile}" --output "${outputFile}"`;
     
     try {
-      execSync(command, { cwd: '/Users/wao_singapore/python2ib', stdio: 'pipe' });
+      execSync(command, { cwd: '/Users/shuna/pyton2ib', stdio: 'pipe' });
       
       // 出力ファイルが作成されたことを確認
       expect(existsSync(outputFile)).toBe(true);
@@ -135,7 +135,7 @@ print(x)`;
     const command = `npm run dev -- --input "${inputFile}" --output "${outputFile}" --strict`;
     
     try {
-      execSync(command, { cwd: '/Users/wao_singapore/python2ib', stdio: 'pipe' });
+      execSync(command, { cwd: '/Users/shuna/pyton2ib', stdio: 'pipe' });
       
       // 出力ファイルが作成されたことを確認
       expect(existsSync(outputFile)).toBe(true);
@@ -156,7 +156,7 @@ print(x)`;
     const command = `npm run dev -- --input "${nonExistentFile}" --output "${outputFile}"`;
     
     try {
-      execSync(command, { cwd: '/Users/wao_singapore/python2ib', stdio: 'pipe' });
+      execSync(command, { cwd: '/Users/shuna/pyton2ib', stdio: 'pipe' });
       // エラーが発生するはずなので、ここに到達したら失敗
       expect(true).toBe(false);
     } catch (error) {
@@ -189,7 +189,7 @@ while len(numbers) > 0:
     const command = `npm run dev -- --input "${inputFile}" --output "${outputFile}"`;
     
     try {
-      execSync(command, { cwd: '/Users/wao_singapore/python2ib', stdio: 'pipe' });
+      execSync(command, { cwd: '/Users/shuna/pyton2ib', stdio: 'pipe' });
       
       // 出力ファイルが作成されたことを確認
       expect(existsSync(outputFile)).toBe(true);
@@ -202,7 +202,7 @@ while len(numbers) > 0:
       expect(result).toContain('end FUNCTION');
       
       // 制御構造
-      expect(result).toContain('if N ≤ 1 then');
+      expect(result).toContain('if N <= 1 then');
       expect(result).toContain('else');
       expect(result).toContain('end if');
       

@@ -340,9 +340,8 @@ export class PythonToIRVisitor extends BaseVisitor {
   visitWhile(node: PythonASTNode): IR {
     const condition = this.extractExpression(node.test);
     
-    // Convert while condition to until condition by negating it
-    const negatedCondition = this.negateCondition(condition);
-    const loopNode = IRFactory.until(negatedCondition, node.lineno);
+    // Use while condition directly (no negation needed)
+    const loopNode = IRFactory.while(condition, node.lineno);
     
     // Process body
     if (node.body && Array.isArray(node.body)) {
@@ -365,28 +364,7 @@ export class PythonToIRVisitor extends BaseVisitor {
     };
   }
 
-  /** Negate a condition for while -> until conversion */
-  private negateCondition(condition: string): string {
-    // Handle comparison operators
-    const comparisons: { [key: string]: string } = {
-      '<=': '>',
-      '>=': '<',
-      '<': '>=',
-      '>': '<=',
-      '=': '<>',
-      '<>': '='
-    };
-    
-    // Try to find and replace comparison operators
-    for (const [original, negated] of Object.entries(comparisons)) {
-      if (condition.includes(` ${original} `)) {
-        return condition.replace(` ${original} `, ` ${negated} `);
-      }
-    }
-    
-    // If no simple comparison found, wrap with NOT
-    return `NOT (${condition})`;
-  }
+
   
   /** Visit For statement */
   visitFor(node: PythonASTNode): IR {
