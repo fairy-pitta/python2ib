@@ -1,5 +1,5 @@
 {
-  "name": "pyton2ib",
+  "name": "python2ib",
   "version": "1.0.1",
   "description": "Convert Python code to IB Pseudocode format",
   "type": "module",
