@@ -1,6 +1,6 @@
 # Python to IB Pseudocode Converter
 
-[![npm version](https://badge.fury.io/js/pyton2ib.svg)](https://badge.fury.io/js/pyton2ib)
+[![npm version](https://badge.fury.io/js/python2ib.svg)](https://badge.fury.io/js/python2ib)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js CI](https://github.com/fairy-pitta/python2ib/workflows/Node.js%20CI/badge.svg)](https://github.com/fairy-pitta/python2ib/actions)
 
@@ -8,32 +8,29 @@ A TypeScript library and CLI tool that converts Python code to IB (International
 
 ## Features
 
-- ✅ **Complete Python to IB Pseudocode conversion**
-- ✅ **Support for core Python constructs**: variables, functions, control structures
-- ✅ **Configurable output formatting**: indentation, style options
-- ✅ **CLI tool** for command-line usage
-- ✅ **TypeScript API** for programmatic use
-- ✅ **Syntax validation** and error reporting
-- ✅ **Comprehensive test suite**
+- **Python to IB Pseudocode conversion** with basic syntax support
+- **CLI tool** for command-line usage
+- **TypeScript API** for programmatic use
+- **Basic error handling** and syntax validation
+- **Test coverage** for core functionality
 
 ## Supported Python Constructs
 
-### ✅ Fully Supported
-- Variable assignments (`x = 5` → `x ← 5`)
-- Arithmetic operations (`+`, `-`, `*`, `/`, `//`, `%`, `**`)
+### Currently Supported
+- Variable assignments (`x = 5` → `X = 5`)
+- Basic arithmetic operations (`+`, `-`, `*`, `/`, `//`, `%`)
 - Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
 - Logical operations (`and`, `or`, `not`)
-- Output statements (`print()` → `OUTPUT`)
-- Input statements (`input()` → `INPUT`)
-- If/else statements (`if`/`else` → `IF`/`ELSE`/`ENDIF`)
-- While loops (`while` → `WHILE`/`ENDWHILE`)
-- For loops with range (`for i in range()` → `FOR`/`NEXT`)
-- Function definitions (`def` → `FUNCTION`/`PROCEDURE`)
-- Return statements (`return` → `RETURN`)
+- Output statements (`print()` → `output`)
+- If/else statements (`if`/`else` → `if`/`else`/`end if`)
+- While loops (`while` → `loop while`/`end loop`)
+- For loops with range (`for i in range()` → `loop from`/`end loop`)
+- Function definitions (`def` → `function`/`procedure`)
 - Comments (`#` → `//`)
-- Built-in functions (`len()`, `str()`, `int()`, `float()`)
+- Compound assignment operators (`+=`, `-=`, `*=`)
+- Array/list indexing and assignment
 
-### ❌ Not Supported (IB Pseudocode limitations)
+### Not Supported
 - Classes and objects
 - List comprehensions
 - Lambda functions
@@ -42,6 +39,7 @@ A TypeScript library and CLI tool that converts Python code to IB (International
 - Advanced data structures (dictionaries, sets)
 - Decorators
 - Context managers (with statements)
+- Built-in functions beyond basic conversion
 
 ## Error Handling
 
@@ -91,12 +89,12 @@ Quick fixes:
 
 ### Global Installation (for CLI usage)
 ```bash
-npm install -g pyton2ib
+npm install -g python2ib
 ```
 
 ### Local Installation (for programmatic usage)
 ```bash
-npm install pyton2ib
+npm install python2ib
 ```
 
 ### Requirements
