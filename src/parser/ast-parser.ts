@@ -35,6 +35,13 @@ export enum TokenType {
   TRUE = 'TRUE',
   FALSE = 'FALSE',
   NONE = 'NONE',
+  CLASS = 'CLASS',
+  PASS = 'PASS',
+  SELF = 'SELF',
+  SUPER = 'SUPER',
+  PROPERTY = 'PROPERTY',
+  STATICMETHOD = 'STATICMETHOD',
+  CLASSMETHOD = 'CLASSMETHOD',
   
   // Operators
   ASSIGN = 'ASSIGN',
@@ -66,6 +73,7 @@ export enum TokenType {
   COMMA = 'COMMA',
   COLON = 'COLON',
   DOT = 'DOT',
+  AT = 'AT',
   
   // Special
   NEWLINE = 'NEWLINE',
@@ -331,7 +339,11 @@ export class PythonLexer {
       'not': TokenType.NOT,
       'True': TokenType.TRUE,
       'False': TokenType.FALSE,
-      'None': TokenType.NONE
+      'None': TokenType.NONE,
+      'class': TokenType.CLASS,
+      'pass': TokenType.PASS,
+      'self': TokenType.SELF,
+      'super': TokenType.SUPER
     };
     
     return keywords[value] || null;
@@ -370,7 +382,8 @@ export class PythonLexer {
       ']': TokenType.RBRACKET,
       ',': TokenType.COMMA,
       ':': TokenType.COLON,
-      '.': TokenType.DOT
+      '.': TokenType.DOT,
+      '@': TokenType.AT
     };
     
     return operators[char] || null;
@@ -425,21 +438,26 @@ export class ASTParser {
     if (this.check(TokenType.IF)) {
       return this.parseIf();
     }
-    
     if (this.check(TokenType.WHILE)) {
       return this.parseWhile();
     }
-    
     if (this.check(TokenType.FOR)) {
       return this.parseFor();
     }
-    
     if (this.check(TokenType.DEF)) {
       return this.parseFunction();
     }
-    
+    if (this.check(TokenType.CLASS)) {
+      return this.parseClass();
+    }
+    if (this.check(TokenType.AT)) {
+      return this.parseDecorator();
+    }
     if (this.check(TokenType.RETURN)) {
       return this.parseReturn();
+    }
+    if (this.check(TokenType.PASS)) {
+      return this.parsePass();
     }
     
     if (this.check(TokenType.PRINT)) {
@@ -611,7 +629,14 @@ export class ASTParser {
     const args: string[] = [];
     if (!this.check(TokenType.RPAREN)) {
       do {
-        args.push(this.consume(TokenType.IDENTIFIER, "Expected parameter name").value);
+        // Accept both IDENTIFIER and SELF tokens for parameters
+        if (this.check(TokenType.IDENTIFIER)) {
+          args.push(this.advance().value);
+        } else if (this.check(TokenType.SELF)) {
+          args.push(this.advance().value);
+        } else {
+          throw new Error(`Expected parameter name. Got '${this.peek().value}' at line ${this.peek().line}`);
+        }
       } while (this.match(TokenType.COMMA));
     }
     
@@ -640,6 +665,70 @@ export class ASTParser {
     return {
       type: 'Return',
       value,
+      lineno: token.line
+    };
+  }
+  
+  private parseClass(): PythonASTNode {
+    this.advance(); // consume 'class'
+    
+    const name = this.consume(TokenType.IDENTIFIER, "Expected class name").value;
+    
+    const bases: PythonASTNode[] = [];
+    if (this.match(TokenType.LPAREN)) {
+      if (!this.check(TokenType.RPAREN)) {
+        do {
+          bases.push(this.parseExpression());
+        } while (this.match(TokenType.COMMA));
+      }
+      this.consume(TokenType.RPAREN, "Expected ')' after base classes");
+    }
+    
+    this.consume(TokenType.COLON, "Expected ':' after class declaration");
+    this.skipNewlines();
+    
+    const body = this.parseBlock();
+    
+    return {
+      type: 'ClassDef',
+      name,
+      bases,
+      body,
+      decorator_list: [],
+      lineno: this.previous().line
+    };
+  }
+
+  private parseDecorator(): PythonASTNode {
+    this.advance(); // consume '@'
+    
+    const decorator = this.parseExpression();
+    this.skipNewlines();
+    
+    // Parse the decorated function or class
+    let target: PythonASTNode;
+    if (this.check(TokenType.DEF)) {
+      target = this.parseFunction();
+    } else if (this.check(TokenType.CLASS)) {
+      target = this.parseClass();
+    } else {
+      throw new Error(`Unexpected token after decorator at line ${this.peek().line}`);
+    }
+    
+    // Add decorator to the target's decorator_list
+    if (!target.decorator_list) {
+      target.decorator_list = [];
+    }
+    target.decorator_list.unshift(decorator);
+    
+    return target;
+  }
+
+  private parsePass(): PythonASTNode {
+    const token = this.advance(); // consume 'pass'
+    
+    return {
+      type: 'Pass',
       lineno: token.line
     };
   }
@@ -988,7 +1077,7 @@ export class ASTParser {
       };
     }
     
-    if (this.match(TokenType.IDENTIFIER, TokenType.PRINT, TokenType.INPUT)) {
+    if (this.match(TokenType.IDENTIFIER, TokenType.PRINT, TokenType.INPUT, TokenType.SELF, TokenType.SUPER)) {
       return {
         type: 'Name',
         id: this.previous().value,

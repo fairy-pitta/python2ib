@@ -55,7 +55,7 @@ export const KEYWORD_MAPPING: Record<string, string> = {
 
 /** Built-in function mappings */
 export const BUILTIN_FUNCTION_MAPPING: Record<string, string> = {
-  'print': 'OUTPUT',
+  'print': 'output',
   'input': 'INPUT',
   'len': 'SIZE',
   'str': 'STRING',
@@ -101,7 +101,7 @@ export const IB_RESERVED_WORDS = new Set([
   'PROCEDURE', 'ENDPROCEDURE',
   'FUNCTION', 'ENDFUNCTION', 'RETURNS',
   'TRY', 'EXCEPT', 'ENDTRY',
-  'INPUT', 'OUTPUT',
+  'INPUT', 'output',
   'AND', 'OR', 'NOT',
   'TRUE', 'FALSE', 'NULL',
   'INTEGER', 'REAL', 'STRING', 'BOOLEAN',
@@ -198,13 +198,13 @@ export const SPECIAL_CONSTRUCTS = {
   /** Handle print() function conversion */
   convertPrint(args: string[]): string {
     if (args.length === 0) {
-      return 'OUTPUT ""';
+      return 'output ""';
     }
     if (args.length === 1) {
-      return `OUTPUT ${args[0]}`;
+      return `output ${args[0]}`;
     }
     // Multiple arguments - join with spaces
-    return `OUTPUT ${args.join(' + " " + ')}`;
+    return `output ${args.join(' + " " + ')}`;
   },
   
   /** Handle input() function conversion */

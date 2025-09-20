@@ -205,8 +205,13 @@ export abstract class BaseVisitor implements Visitor<IR> {
   
   /** Extract attribute access expression (e.g., obj.method) */
   protected extractAttribute(node: PythonASTNode, depth: number = 0): string {
-    const value = this.extractExpression(node.value, depth);
+    let value = this.extractExpression(node.value, depth);
     const attr = node.attr;
+    
+    // Handle self attribute access - convert 'self' to 'SELF'
+    if (node.value.type === 'Name' && node.value.id === 'self') {
+      value = 'SELF';
+    }
     
     // Convert Python method names to IB Pseudocode equivalents
     const methodMapping: Record<string, string> = {
@@ -275,7 +280,7 @@ export abstract class BaseVisitor implements Visitor<IR> {
       'Add': '+',
       'Sub': '-',
       'Mult': '*',
-      'Div': '/',
+      'Div': 'div',
       'FloorDiv': 'div',
       'Mod': 'mod',
       'Pow': '^'
@@ -409,7 +414,7 @@ export const VisitorUtils = {
   isSimpleAssignment(node: PythonASTNode): boolean {
     return node.type === 'Assign' && 
            node.targets.length === 1 && 
-           (node.targets[0].type === 'Name' || node.targets[0].type === 'Subscript' || node.targets[0].type === 'Tuple');
+           (node.targets[0].type === 'Name' || node.targets[0].type === 'Subscript' || node.targets[0].type === 'Tuple' || node.targets[0].type === 'Attribute');
   },
   
   /** Check if node is a function call */

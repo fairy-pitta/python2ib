@@ -113,6 +113,62 @@ export class IBPseudocodeEmitter {
         this.emitReturn(node);
         break;
         
+      case 'class':
+        this.emitClass(node);
+        break;
+        
+      case 'endclass':
+        this.emitEndclass(node);
+        break;
+        
+      case 'constructor':
+        this.emitConstructor(node);
+        break;
+        
+      case 'endconstructor':
+        this.emitEndconstructor(node);
+        break;
+        
+      case 'method':
+        this.emitMethod(node);
+        break;
+        
+      case 'staticmethod':
+        this.emitStaticmethod(node);
+        break;
+        
+      case 'classmethod':
+        this.emitClassmethod(node);
+        break;
+        
+      case 'property':
+        this.emitProperty(node);
+        break;
+        
+      case 'endproperty':
+        this.emitEndproperty(node);
+        break;
+        
+      case 'getter':
+        this.emitGetter(node);
+        break;
+        
+      case 'endget':
+        this.emitEndget(node);
+        break;
+        
+      case 'setter':
+        this.emitSetter(node);
+        break;
+        
+      case 'endset':
+        this.emitEndset(node);
+        break;
+        
+      case 'pass':
+        this.emitPass(node);
+        break;
+        
       case 'comment':
         this.emitComment(node);
         break;
@@ -121,12 +177,12 @@ export class IBPseudocodeEmitter {
         this.emitExpression(node);
         break;
         
-      case 'block':
-        this.emitBlock(node);
-        break;
-        
       case 'sequence':
         this.emitSequence(node);
+        break;
+        
+      case 'block':
+        this.emitBlock(node);
         break;
         
       default:
@@ -346,6 +402,178 @@ export class IBPseudocodeEmitter {
   
 
   
+  /** Emit class definition */
+  private emitClass(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+  
+  /** Emit endclass */
+  private emitEndclass(node: IR): void {
+    // Decrease indent before emitting ENDCLASS
+    this.indentManager.decrease();
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+  }
+  
+  /** Emit constructor definition */
+  private emitConstructor(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+  
+  /** Emit endconstructor */
+  private emitEndconstructor(node: IR): void {
+    // Decrease indent before emitting ENDCONSTRUCTOR
+    this.indentManager.decrease();
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+  }
+  
+  /** Emit method definition */
+  private emitMethod(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+
+  /** Emit static method definition */
+  private emitStaticmethod(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+    
+    // Decrease indent before emitting ENDFUNCTION
+    this.indentManager.decrease();
+    const endLine = this.indentManager.current + 'ENDFUNCTION';
+    this.output.push(endLine);
+  }
+
+  /** Emit class method definition */
+  private emitClassmethod(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+    
+    // Decrease indent before emitting ENDFUNCTION
+    this.indentManager.decrease();
+    const endLine = this.indentManager.current + 'ENDFUNCTION';
+    this.output.push(endLine);
+  }
+  
+  /** Emit pass statement */
+  private emitPass(node: IR): void {
+    // Pass statements are typically empty in pseudocode
+    // Only add a comment if there are no other statements
+    if (node.text) {
+      const line = this.indentManager.current + node.text;
+      this.output.push(line);
+    }
+  }
+
+  /** Emit property definition */
+  private emitProperty(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+
+  /** Emit endproperty */
+  private emitEndproperty(node: IR): void {
+    // Decrease indent before emitting ENDPROPERTY
+    this.indentManager.decrease();
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+  }
+
+  /** Emit getter definition */
+  private emitGetter(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+
+  /** Emit endget */
+  private emitEndget(node: IR): void {
+    // Decrease indent before emitting ENDGET
+    this.indentManager.decrease();
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+  }
+
+  /** Emit setter definition */
+  private emitSetter(node: IR): void {
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+    
+    // Increase indent for body
+    this.indentManager.increase();
+    
+    // Emit children
+    for (const child of node.children) {
+      this.emitNode(child);
+    }
+  }
+
+  /** Emit endset */
+  private emitEndset(node: IR): void {
+    // Decrease indent before emitting ENDSET
+    this.indentManager.decrease();
+    const line = this.indentManager.current + node.text;
+    this.output.push(line);
+  }
+
   /** Emit unsupported node */
   private emitUnsupported(node: IR): void {
     const unsupportedComment = `// UNSUPPORTED: ${node.kind} - ${node.text}`;

@@ -9,8 +9,8 @@ export const ASSIGNMENT_OPERATORS: Record<string, string> = {
   '-=': '= {var} -',
   '*=': '= {var} *',
   '/=': '= {var} /',
-  '//=': '= {var} div',
-  '%=': '= {var} mod',
+  '//=': '= {var} DIV',
+  '%=': '= {var} MOD',
   '**=': '= {var} ^'
 };
 
@@ -33,7 +33,7 @@ export const ARITHMETIC_OPERATORS: Record<string, string> = {
   '+': '+',
   '-': '-',
   '*': '*',
-  '/': '/',
+  '/': 'div',
   '//': 'div',
   '%': 'mod',
   '**': '^'

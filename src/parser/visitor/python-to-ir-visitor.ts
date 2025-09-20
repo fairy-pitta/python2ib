@@ -11,6 +11,8 @@ import { KeywordConverter, SPECIAL_CONSTRUCTS } from '../../utils/keywords.js';
 
 /** Main Python to IR visitor */
 export class PythonToIRVisitor extends BaseVisitor {
+  private isInPropertySetter = false;
+  
   constructor(config: Required<ConvertOptions>) {
     super(config);
   }
@@ -50,6 +52,9 @@ export class PythonToIRVisitor extends BaseVisitor {
     } else if (targetNode.type === 'Subscript') {
       // Handle array/list assignment like names[0] = "Alice"
       mappedTarget = this.extractExpression(targetNode);
+    } else if (targetNode.type === 'Attribute') {
+      // Handle attribute assignment like self.name = name
+      mappedTarget = this.extractExpression(targetNode);
     } else {
       return this.createError('Unsupported assignment target', node.lineno);
     }
@@ -67,7 +72,15 @@ export class PythonToIRVisitor extends BaseVisitor {
       }
     }
     
-    const value = this.extractExpression(node.value);
+    // Handle value extraction - for self attribute assignments, keep variable names as-is
+    let value: string;
+    if (targetNode.type === 'Attribute' && 
+        targetNode.value && targetNode.value.type === 'Name' && targetNode.value.id === 'self' &&
+        node.value.type === 'Name') {
+      value = node.value.id; // Use variable name as-is for self attribute assignments
+    } else {
+      value = this.extractExpression(node.value);
+    }
     
     // Handle compound assignment operators
     if (node.operator && node.operator !== '=') {
@@ -190,23 +203,13 @@ export class PythonToIRVisitor extends BaseVisitor {
         text: '',
         children: [
           IRFactory.output(prompt, node.lineno),
-          {
-            kind: 'input',
-            text: 'INPUT',
-            children: [],
-            meta: { lineNumber: node.lineno }
-          }
+          IRFactory.input(undefined, node.lineno)
         ],
         meta: { lineNumber: node.lineno }
       };
     }
     
-    return {
-      kind: 'input',
-      text: 'INPUT',
-      children: [],
-      meta: { lineNumber: node.lineno }
-    };
+    return IRFactory.input(undefined, node.lineno);
   }
   
   /** Visit Input function call in assignment */
@@ -221,23 +224,13 @@ export class PythonToIRVisitor extends BaseVisitor {
         text: '',
         children: [
           IRFactory.output(prompt, node.lineno),
-          {
-            kind: 'input',
-            text: `INPUT ${variable}`,
-            children: [],
-            meta: { variable, lineNumber: node.lineno }
-          }
+          IRFactory.input(variable, node.lineno)
         ],
         meta: { lineNumber: node.lineno }
       };
     }
     
-    return {
-      kind: 'input',
-      text: `INPUT ${variable}`,
-      children: [],
-      meta: { variable, lineNumber: node.lineno }
-    };
+    return IRFactory.input(variable, node.lineno);
   }
   
   /** Visit If statement */
@@ -417,6 +410,16 @@ export class PythonToIRVisitor extends BaseVisitor {
     const name = this.mapFunctionName(node.name);
     const params = node.args.args.map((arg: any) => this.mapVariableName(arg.arg || arg.id || String(arg)));
     
+    // Check if this is a constructor (__init__ method)
+    if (node.name === '__init__') {
+      return this.visitConstructor(node);
+    }
+    
+    // Check for decorators
+    if (node.decorator_list && node.decorator_list.length > 0) {
+      return this.visitDecoratedFunction(node);
+    }
+    
     // Check if function has return statements
     const hasReturn = this.hasReturnStatement(node.body || []);
     
@@ -477,6 +480,299 @@ export class PythonToIRVisitor extends BaseVisitor {
     };
   }
 
+  /** Visit Class definition */
+  visitClassDef(node: PythonASTNode): IR {
+    const className = node.name;
+    
+    // Handle inheritance
+    let baseClass: string | undefined;
+    if (node.bases && node.bases.length > 0) {
+      // For simplicity, we only handle single inheritance
+      const baseNode = node.bases[0];
+      if (baseNode.type === 'Name') {
+        baseClass = baseNode.id;
+      }
+    }
+    
+    const classIR = baseClass 
+      ? IRFactory.classWithInheritance(className, baseClass, node.lineno)
+      : IRFactory.class(className, node.lineno);
+    
+    // Process class body
+    for (const stmt of node.body) {
+      if (stmt.type === 'FunctionDef') {
+        // Handle methods (including __init__ as constructor)
+        if (stmt.name === '__init__') {
+          const constructorIR = this.visitConstructor(stmt);
+          classIR.children.push(constructorIR);
+        } else {
+          // Check if method has decorators
+          if (stmt.decorator_list && stmt.decorator_list.length > 0) {
+            const decoratedMethodIR = this.visitDecoratedFunction(stmt);
+            classIR.children.push(decoratedMethodIR);
+          } else {
+            const methodIR = this.visitMethod(stmt);
+            classIR.children.push(methodIR);
+          }
+        }
+      } else {
+        // Handle other statements in class body
+        const ir = this.visit(stmt);
+        if (ir) {
+          classIR.children.push(ir);
+        }
+      }
+    }
+    
+    // Add ENDCLASS
+    classIR.children.push(IRFactory.endclass(node.lineno));
+    
+    return classIR;
+  }
+
+  /** Visit Constructor (__init__ method) */
+  private visitConstructor(node: PythonASTNode): IR {
+    const params = node.args.args.map((arg: any) => this.mapVariableName(arg.arg || arg.id || String(arg)));
+    // Remove 'self' parameter for pseudocode
+    const filteredParams = params.filter((param: string) => param.toLowerCase() !== 'self');
+    
+    const constructorIR = IRFactory.classConstructor(filteredParams, node.lineno);
+    const endConstructorIR = IRFactory.endconstructor(node.lineno);
+    
+    // Process constructor body
+    for (const stmt of node.body) {
+      const ir = this.visit(stmt);
+      if (ir) {
+        constructorIR.children.push(ir);
+      }
+    }
+    
+    return {
+      kind: 'block',
+      text: '',
+      children: [constructorIR, endConstructorIR],
+      meta: { lineNumber: node.lineno }
+    };
+  }
+
+  /** Visit Method definition */
+  private visitMethod(node: PythonASTNode): IR {
+    const methodName = this.mapFunctionName(node.name);
+    const params = node.args.args.map((arg: any) => this.mapVariableName(arg.arg || arg.id || String(arg)));
+    // Remove 'self' parameter for pseudocode
+    const filteredParams = params.filter((param: string) => param.toLowerCase() !== 'self');
+    
+    // Check if method has return statements
+    const hasReturn = this.hasReturnStatement(node.body || []);
+    
+    let methodIR: IR;
+    let endMethodIR: IR;
+    
+    if (hasReturn) {
+      // Function with return value
+      methodIR = IRFactory.function(methodName, filteredParams, 'value', node.lineno);
+      endMethodIR = IRFactory.endfunction(node.lineno);
+    } else {
+      // Procedure without return value
+      methodIR = IRFactory.procedure(methodName, filteredParams, node.lineno);
+      endMethodIR = IRFactory.endprocedure(node.lineno);
+    }
+    
+    // Process method body
+    for (const stmt of node.body) {
+      const ir = this.visit(stmt);
+      if (ir) {
+        methodIR.children.push(ir);
+      }
+    }
+    
+    return {
+      kind: 'block',
+      text: '',
+      children: [methodIR, endMethodIR],
+      meta: { lineNumber: node.lineno }
+    };
+  }
+
+  /** Visit decorated function (property, setter, etc.) */
+  private visitDecoratedFunction(node: PythonASTNode): IR {
+    const decorators = node.decorator_list || [];
+    
+    for (const decorator of decorators) {
+      const decoratorName = this.extractDecoratorName(decorator);
+      
+      if (decoratorName === 'property') {
+        return this.visitPropertyGetter(node);
+      } else if (decoratorName.endsWith('.setter')) {
+        return this.visitPropertySetter(node);
+      } else if (decoratorName === 'staticmethod') {
+        return this.visitStaticMethod(node);
+      } else if (decoratorName === 'classmethod') {
+        return this.visitClassMethod(node);
+      }
+    }
+    
+    // If no recognized decorator, treat as regular function
+    return this.visitRegularFunction(node);
+  }
+
+  /** Extract decorator name from decorator node */
+  private extractDecoratorName(decorator: PythonASTNode): string {
+    if (decorator.id) {
+      return decorator.id;
+    } else if (decorator.attr && decorator.value) {
+      const base = decorator.value.id || '';
+      return `${base}.${decorator.attr}`;
+    }
+    return '';
+  }
+
+  /** Visit property getter */
+  private visitPropertyGetter(node: PythonASTNode): IR {
+    const propertyName = this.mapFunctionName(node.name);
+    
+    const propertyNode = IRFactory.property(propertyName, node.lineno);
+    const getterNode = IRFactory.getter(node.lineno);
+    const endGetNode = IRFactory.endget(node.lineno);
+    const endPropertyNode = IRFactory.endproperty(node.lineno);
+    
+    // Process getter body
+    if (node.body && Array.isArray(node.body)) {
+      for (const stmt of node.body) {
+        const childNode = this.visit(stmt);
+        if (childNode) {
+          getterNode.children.push(childNode);
+        }
+      }
+    }
+    
+    propertyNode.children.push(getterNode);
+    propertyNode.children.push(endGetNode);
+    
+    return {
+      kind: 'block',
+      text: '',
+      children: [propertyNode, endPropertyNode],
+      meta: { lineNumber: node.lineno }
+    };
+  }
+
+  /** Visit property setter */
+  private visitPropertySetter(node: PythonASTNode): IR {
+    const params = node.args.args.map((arg: any) => arg.arg || arg.id || String(arg));
+    // Remove 'self' parameter for pseudocode
+    const filteredParams = params.filter((param: string) => param.toLowerCase() !== 'self');
+    
+    const setterNode = IRFactory.setter(filteredParams, node.lineno);
+    const endSetNode = IRFactory.endset(node.lineno);
+    
+    // Set property setter context
+    this.isInPropertySetter = true;
+    
+    // Process setter body
+    if (node.body && Array.isArray(node.body)) {
+      for (const stmt of node.body) {
+        const childNode = this.visit(stmt);
+        if (childNode) {
+          setterNode.children.push(childNode);
+        }
+      }
+    }
+    
+    // Reset property setter context
+    this.isInPropertySetter = false;
+    
+    return {
+      kind: 'block',
+      text: '',
+      children: [setterNode, endSetNode],
+      meta: { lineNumber: node.lineno }
+    };
+  }
+
+  /** Visit static method */
+  private visitStaticMethod(node: PythonASTNode): IR {
+    const name = this.mapFunctionName(node.name);
+    const params = node.args.args.map((arg: any) => this.mapVariableName(arg.arg || arg.id || String(arg)));
+    
+    // Static methods always return a value in IB pseudocode
+    const staticMethodNode = IRFactory.staticMethod(name, params, 'value', node.lineno);
+    
+    // Process method body
+    if (node.body && Array.isArray(node.body)) {
+      for (const stmt of node.body) {
+        const childNode = this.visit(stmt);
+        if (childNode) {
+          staticMethodNode.children.push(childNode);
+        }
+      }
+    }
+    
+    return staticMethodNode;
+  }
+
+  /** Visit class method */
+  private visitClassMethod(node: PythonASTNode): IR {
+    const name = this.mapFunctionName(node.name);
+    const params = node.args.args.map((arg: any) => this.mapVariableName(arg.arg || arg.id || String(arg)));
+    // Remove 'cls' parameter for pseudocode
+    const filteredParams = params.filter((param: string) => param.toLowerCase() !== 'cls');
+    
+    // Class methods always return a value in IB pseudocode
+    const classMethodNode = IRFactory.classMethod(name, filteredParams, 'value', node.lineno);
+    
+    // Process method body
+    if (node.body && Array.isArray(node.body)) {
+      for (const stmt of node.body) {
+        const childNode = this.visit(stmt);
+        if (childNode) {
+          classMethodNode.children.push(childNode);
+        }
+      }
+    }
+    
+    return classMethodNode;
+  }
+
+  /** Visit regular function (fallback for decorated functions) */
+  private visitRegularFunction(node: PythonASTNode): IR {
+    const name = this.mapFunctionName(node.name);
+    const params = node.args.args.map((arg: any) => this.mapVariableName(arg.arg || arg.id || String(arg)));
+    
+    // Check if function has return statements
+    const hasReturn = this.hasReturnStatement(node.body || []);
+    
+    let funcNode: IR;
+    let endNode: IR;
+    
+    if (hasReturn) {
+      // Function with return value
+      funcNode = IRFactory.function(name, params, 'value', node.lineno);
+      endNode = IRFactory.endfunction(node.lineno);
+    } else {
+      // Procedure without return value
+      funcNode = IRFactory.procedure(name, params, node.lineno);
+      endNode = IRFactory.endprocedure(node.lineno);
+    }
+    
+    // Process function body
+    if (node.body && Array.isArray(node.body)) {
+      for (const stmt of node.body) {
+        const childNode = this.visit(stmt);
+        if (childNode) {
+          funcNode.children.push(childNode);
+        }
+      }
+    }
+    
+    return {
+      kind: 'block',
+      text: '',
+      children: [funcNode, endNode],
+      meta: { lineNumber: node.lineno }
+    };
+  }
+
   /** Visit Comment */
   visitComment(node: PythonASTNode): IR {
     return IRFactory.comment(node.value, node.lineno);
@@ -485,6 +781,12 @@ export class PythonToIRVisitor extends BaseVisitor {
   /** Visit Call expression */
   visitCall(node: PythonASTNode): IR {
     const funcName = VisitorUtils.getFunctionName(node);
+    
+    // Handle super() calls
+    if (funcName === 'super') {
+      const args = node.args.map((arg: PythonASTNode) => this.extractExpression(arg));
+      return IRFactory.expression(`SUPER(${args.join(', ')})`, node.lineno);
+    }
     
     // Handle built-in functions
     if (KeywordConverter.isBuiltinSupported(funcName)) {
@@ -550,6 +852,46 @@ export class PythonToIRVisitor extends BaseVisitor {
     return `${left} ${operator} ${right}`;
   }
   
+  /** Override mapVariableName to handle property setter context */
+  protected override mapVariableName(name: string): string {
+    // In property setter context, keep variable names as-is (lowercase)
+    if (this.isInPropertySetter) {
+      return name;
+    }
+    
+    // Use parent class implementation for normal context
+    return super.mapVariableName(name);
+  }
+  
+  /** Override extractAttribute to handle property setter context */
+  protected override extractAttribute(node: PythonASTNode, depth: number = 0): string {
+    let value = this.extractExpression(node.value, depth);
+    const attr = node.attr;
+    
+    // Handle self attribute access in property setter context
+    if (this.isInPropertySetter && node.value.type === 'Name' && node.value.id === 'self') {
+      // In property setter, omit 'self.' prefix and return just the attribute name
+      return attr;
+    }
+    
+    // Handle self attribute access - convert 'self' to 'SELF'
+    if (node.value.type === 'Name' && node.value.id === 'self') {
+      value = 'SELF';
+    }
+    
+    // Convert Python method names to IB Pseudocode equivalents
+    const methodMapping: Record<string, string> = {
+      'has_next': 'hasNext',
+      'get_next': 'getNext',
+      'reset_next': 'resetNext',
+      'is_empty': 'isEmpty'
+    };
+    
+    const mappedAttr = methodMapping[attr] || attr;
+    
+    return `${value}.${mappedAttr}`;
+  }
+  
   /** Override extractCall to handle special cases */
   protected override extractCall(node: PythonASTNode): string {
     // Handle method calls (obj.method())
@@ -600,6 +942,13 @@ export class PythonToIRVisitor extends BaseVisitor {
       }
     }
     
+    // Check if this is a class instantiation (constructor call)
+    // Class names typically start with uppercase letter
+    if (this.isClassInstantiation(funcName)) {
+      const args = node.args.map((arg: PythonASTNode) => this.extractExpression(arg));
+      return `NEW ${funcName}(${args.join(', ')})`;
+    }
+    
     // User-defined function
     const mappedName = this.mapFunctionName(funcName);
     const args = node.args.map((arg: PythonASTNode) => this.extractExpression(arg));
@@ -645,5 +994,11 @@ export class PythonToIRVisitor extends BaseVisitor {
       children: [],
       meta: { lineNumber: node.lineno }
     };
+  }
+  
+  /** Check if a function call is actually a class instantiation */
+  private isClassInstantiation(funcName: string): boolean {
+    // Class names typically start with uppercase letter in Python conventions
+    return /^[A-Z][a-zA-Z0-9_]*$/.test(funcName);
   }
 }
