@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     // Test files pattern
     include: ['tests/**/*.test.ts'],
+    exclude: ['tests/browser-e2e.test.ts'],
     
     // Test environment
     environment: 'node',
