@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/python2ib.svg)](https://badge.fury.io/js/python2ib)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js CI](https://github.com/fairy-pitta/python2ib/workflows/Node.js%20CI/badge.svg)](https://github.com/fairy-pitta/python2ib/actions)
+[![Node.js CI](https://github.com/fairy-pitta/python2ib/actions/workflows/ci.yml/badge.svg)](https://github.com/fairy-pitta/python2ib/actions)
 
 A TypeScript library and CLI tool that converts Python code to IB (International Baccalaureate) Pseudocode format.
 
@@ -96,6 +96,39 @@ npm install -g python2ib
 ```bash
 npm install python2ib
 ```
+
+### Browser Usage
+
+For browser environments, use the pre-built bundle:
+
+```html
+<!-- Include the library -->
+<script src="https://unpkg.com/python2ib/dist/python2ib.min.js"></script>
+
+<script>
+  // Use the global PythonToIB object
+  const converter = new PythonToIB.PythonToIBConverter();
+  const result = converter.convertSync('print("Hello, World!")');
+  console.log(result); // OUTPUT "Hello, World!"
+</script>
+```
+
+Or with ES modules:
+
+```html
+<script type="module">
+  import { convertPythonToIBSync } from 'https://unpkg.com/python2ib/dist/python2ib.min.js';
+  
+  const result = convertPythonToIBSync('x = 5\nprint(x)');
+  console.log(result);
+</script>
+```
+
+**Browser Compatibility:**
+- Chrome 88+
+- Firefox 85+
+- Safari 14+
+- Edge 88+
 
 ### Requirements
 

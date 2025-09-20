@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-01-20
+
+### Added
+- Browser support with pre-built bundle (`python2ib.min.js`)
+- Browser compatibility documentation (Chrome 88+, Firefox 85+, Safari 14+, Edge 88+)
+- ES module support for browser environments
+- Global `PythonToIB` object for browser usage
+- Demo page with live conversion functionality
+
+### Fixed
+- Fixed Node.js CI badge URL in README.md
+- Resolved `[object Promise]` issue in demo page by using synchronous conversion
+- Improved browser bundle configuration
+
+### Changed
+- Updated README.md with comprehensive browser usage examples
+- Enhanced documentation with browser-specific installation instructions
+
 ## [1.0.1] - 2025-06-15
 
 ### Fixed
