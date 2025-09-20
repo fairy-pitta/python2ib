@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python to IB Pseudocode Converter - Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section, .output-section {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        textarea:focus {
+            border-color: #007acc;
+            outline: none;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            align-items: center;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #d32f2f;
+        }
+        .success {
+            color: #2e7d32;
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #2e7d32;
+        }
+        .examples {
+            margin-top: 30px;
+        }
+        .example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .example:hover {
+            background: #e9ecef;
+        }
+        .example h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .example pre {
+            margin: 0;
+            font-size: 13px;
+            color: #6c757d;
+        }
+        #output {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐍 Python to IB Pseudocode Converter</h1>
+        
+        <div class="input-section">
+            <label for="input">Python Code:</label>
+            <textarea id="input" placeholder="# Enter your Python code here\nprint('Hello, World!')\nx = 5\ny = 10\nresult = x + y\nprint(f'Result: {result}')"></textarea>
+        </div>
+        
+        <div class="controls">
+            <button id="convertBtn" onclick="convertCode()">Convert to IB Pseudocode</button>
+            <button id="clearBtn" onclick="clearAll()">Clear All</button>
+        </div>
+        
+        <div id="message"></div>
+        
+        <div class="output-section">
+            <label for="output">IB Pseudocode:</label>
+            <textarea id="output" readonly placeholder="Converted pseudocode will appear here..."></textarea>
+        </div>
+        
+        <div class="examples">
+            <h3>📝 Example Code (Click to try):</h3>
+            
+            <div class="example" onclick="loadExample(this)">
+                <h4>Basic Variables and Operations</h4>
+                <pre># Basic arithmetic operations
+x = 10
+y = 5
+sum_result = x + y
+diff_result = x - y
+print(f"Sum: {sum_result}")
+print(f"Difference: {diff_result}")</pre>
+            </div>
+            
+            <div class="example" onclick="loadExample(this)">
+                <h4>If-Else Statement</h4>
+                <pre># Conditional logic
+age = 18
+if age >= 18:
+    print("You are an adult")
+else:
+    print("You are a minor")</pre>
+            </div>
+            
+            <div class="example" onclick="loadExample(this)">
+                <h4>For Loop</h4>
+                <pre># Loop example
+for i in range(5):
+    print(f"Count: {i}")
+    if i == 3:
+        print("Three!")</pre>
+            </div>
+            
+            <div class="example" onclick="loadExample(this)">
+                <h4>Function Definition</h4>
+                <pre># Function with return value
+def calculate_area(length, width):
+    area = length * width
+    return area
+
+# Function without return value
+def greet(name):
+    print(f"Hello, {name}!")
+
+result = calculate_area(5, 3)
+greet("Alice")</pre>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../dist/python2ib.min.js"></script>
+    <script>
+        let converter;
+        
+        // Initialize the converter when page loads
+        window.addEventListener('load', function() {
+            try {
+                if (typeof Python2IB !== 'undefined' && Python2IB.PythonToIBConverter) {
+                    converter = new Python2IB.PythonToIBConverter();
+                    showMessage('✅ Converter loaded successfully!', 'success');
+                } else {
+                    showMessage('❌ Failed to load converter library', 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Error initializing converter: ${error.message}`, 'error');
+            }
+        });
+        
+        async function convertCode() {
+            const input = document.getElementById('input').value.trim();
+            const output = document.getElementById('output');
+            const convertBtn = document.getElementById('convertBtn');
+            
+            if (!input) {
+                showMessage('⚠️ Please enter some Python code to convert', 'error');
+                return;
+            }
+            
+            if (!converter) {
+                showMessage('❌ Converter not initialized', 'error');
+                return;
+            }
+            
+            convertBtn.disabled = true;
+            convertBtn.textContent = 'Converting...';
+            
+            try {
+                // Use convertSync for synchronous conversion to avoid Promise issues
+                const result = converter.convertSync(input);
+                output.value = result;
+                showMessage('✅ Conversion completed successfully!', 'success');
+            } catch (error) {
+                showMessage(`❌ Conversion error: ${error.message}`, 'error');
+                output.value = '';
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.textContent = 'Convert to IB Pseudocode';
+            }
+        }
+        
+        function clearAll() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').value = '';
+            document.getElementById('message').innerHTML = '';
+        }
+        
+        function loadExample(element) {
+            const code = element.querySelector('pre').textContent;
+            document.getElementById('input').value = code;
+            document.getElementById('output').value = '';
+            document.getElementById('message').innerHTML = '';
+        }
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            
+            // Auto-clear success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 3000);
+            }
+        }
+        
+        // Allow Enter key to trigger conversion (Ctrl+Enter)
+        document.getElementById('input').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                convertCode();
+            }
+        });
+    </script>
+</body>
+</html>
