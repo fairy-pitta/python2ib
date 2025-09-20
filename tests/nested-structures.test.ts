@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { convertPythonToIB } from '../src/converter';
+import { convertPythonToIB } from '../src/converter.js';
 
 /**
  * Nested structure conversion tests
@@ -147,7 +147,7 @@ end loop`;
                     print("positive odd")
             else:
                 print("non-positive")`;
-      const expected = `PROCEDURE processMatrix(MATRIX)
+      const expected = `procedure processMatrix(MATRIX)
     loop I from 0 to SIZE(MATRIX) - 1
         loop J from 0 to SIZE(MATRIX[I]) - 1
             if MATRIX[I][J] > 0 then
@@ -161,7 +161,7 @@ end loop`;
             end if
         end loop
     end loop
-end PROCEDURE`;
+end procedure`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
   });
@@ -174,15 +174,15 @@ end PROCEDURE`;
         if numbers[i] > max_val:
             max_val = numbers[i]
     return max_val`;
-      const expected = `FUNCTION findMax(NUMBERS) RETURNS value
+      const expected = `function findMax(NUMBERS) returns value
     MAX_VAL = NUMBERS[0]
     loop I from 1 to SIZE(NUMBERS) - 1
         if NUMBERS[I] > MAX_VAL then
             MAX_VAL = NUMBERS[I]
         end if
     end loop
-    RETURN MAX_VAL
-end FUNCTION`;
+    return MAX_VAL
+end function`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
 
@@ -193,7 +193,7 @@ end FUNCTION`;
         for j in range(0, n - i - 1):
             if arr[j] > arr[j + 1]:
                 arr[j], arr[j + 1] = arr[j + 1], arr[j]`;
-      const expected = `PROCEDURE bubbleSort(ARR)
+      const expected = `procedure bubbleSort(ARR)
     N = SIZE(ARR)
     loop I from 0 to N - 1
         loop J from 0 to N - I - 2
@@ -204,7 +204,7 @@ end FUNCTION`;
             end if
         end loop
     end loop
-end PROCEDURE`;
+end procedure`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
   });

@@ -11,9 +11,9 @@ describe('Function and Procedure Conversion', () => {
     it('should convert function without return to PROCEDURE', () => {
       const python = `def greet(name):
     print(f"Hello {name}")`;
-      const expected = `PROCEDURE greet(NAME)
+      const expected = `procedure greet(NAME)
     output "Hello " + NAME
-end PROCEDURE`;
+end procedure`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
 
@@ -21,19 +21,19 @@ end PROCEDURE`;
       const python = `def display_info(name, age):
     print(name)
     print(age)`;
-      const expected = `PROCEDURE displayInfo(NAME, AGE)
+      const expected = `procedure displayInfo(NAME, AGE)
     output NAME
     output AGE
-end PROCEDURE`;
+end procedure`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert function with no parameters', () => {
       const python = `def say_hello():
     print("Hello World")`;
-      const expected = `PROCEDURE sayHello()
+      const expected = `procedure sayHello()
     output "Hello World"
-end PROCEDURE`;
+end procedure`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
   });
@@ -42,9 +42,9 @@ end PROCEDURE`;
     it('should convert function with return to FUNCTION', () => {
       const python = `def add(a, b):
     return a + b`;
-      const expected = `FUNCTION add(A, B) RETURNS value
-    RETURN A + B
-end FUNCTION`;
+      const expected = `function add(A, B) returns value
+    return A + B
+end function`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
 
@@ -54,13 +54,13 @@ end FUNCTION`;
         return a
     else:
         return b`;
-      const expected = `FUNCTION maxValue(A, B) RETURNS value
+      const expected = `function maxValue(A, B) returns value
     if A > B then
-        RETURN A
+        return A
     else
-        RETURN B
+        return B
     end if
-end FUNCTION`;
+end function`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
 
@@ -72,15 +72,15 @@ end FUNCTION`;
         return "negative"
     else:
         return "zero"`;
-      const expected = `FUNCTION checkSign(X) RETURNS value
+      const expected = `function checkSign(X) returns value
     if X > 0 then
-        RETURN "positive"
+        return "positive"
     else if X < 0 then
-        RETURN "negative"
+        return "negative"
     else
-        RETURN "zero"
+        return "zero"
     end if
-end FUNCTION`;
+end function`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
   });
@@ -109,20 +109,20 @@ end FUNCTION`;
     it('should convert input() to INPUT statement', () => {
       const python = 'name = input("Enter your name: ")';
       const expected = `output "Enter your name: "
-INPUT NAME`;
+input NAME`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert input() without prompt', () => {
       const python = 'value = input()';
-      const expected = 'INPUT VALUE';
+      const expected = 'input VALUE';
       expect(convertPythonToIB(python)).toBe(expected);
     });
 
     it('should convert input() with type conversion', () => {
       const python = 'age = int(input("Enter age: "))';
       const expected = `output "Enter age: "
-INPUT AGE`;
+input AGE`;
       expect(convertPythonToIB(python)).toBe(expected);
     });
   });

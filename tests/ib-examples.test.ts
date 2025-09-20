@@ -31,7 +31,7 @@ loop I from 0 to 999
     end if
 end loop
 if NOT COUNT = 0 then
-    AVG = TOTAL / COUNT
+    AVG = TOTAL div COUNT
     output AVG
 else
     output "No non-zero values"
@@ -217,21 +217,21 @@ end if`;
             right = mid - 1
     return -1`;
       
-      const expected = `FUNCTION binarySearch(ARR, TARGET) RETURNS value
+      const expected = `function binarySearch(ARR, TARGET) returns value
     LEFT = 0
     RIGHT = SIZE(ARR) - 1
     loop while LEFT <= RIGHT
         MID = (LEFT + RIGHT) div 2
         if ARR[MID] = TARGET then
-            RETURN MID
+            return MID
         else if ARR[MID] < TARGET then
             LEFT = MID + 1
         else
             RIGHT = MID - 1
         end if
     end loop
-    RETURN -1
-end FUNCTION`;
+    return -1
+end function`;
       
       expect(convertPythonToIB(python)).toBe(expected);
     });
@@ -247,9 +247,9 @@ else:
     print(f"Hello {name}, you are a minor")`;
       
       const expected = `output "Enter your name: "
-INPUT NAME
+input NAME
 output "Enter your age: "
-INPUT AGE
+input AGE
 if AGE >= 18 then
     output "Hello " + NAME + ", you are an adult"
 else

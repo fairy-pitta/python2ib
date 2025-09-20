@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { convertPythonToIB } from '../src/converter';
+import { convertPythonToIB } from '../src/converter.js';
 
 describe('Debug Function Conversion', () => {
   it('should debug function without return to PROCEDURE', () => {
     const python = `def greet(name):
     print(f"Hello {name}")`;
-    const expected = `PROCEDURE greet(NAME)
+    const expected = `procedure greet(NAME)
     output "Hello " + NAME
-end PROCEDURE`;
+end procedure`;
     
     console.log('=== Python Input ===');
     console.log(JSON.stringify(python));
